@@ -398,12 +398,12 @@ export default function Autorizacoes() {
 
                 <div className="space-y-3">
                   <FormLabel>Dias da Publicação</FormLabel>
-                  <div className="grid grid-cols-7 sm:grid-cols-10 md:grid-cols-15 lg:grid-cols-31 gap-2">
+                  <div className="grid grid-cols-[repeat(16,minmax(0,1fr))] gap-1.5">
                     {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
                       <div
                         key={day}
                         className={`
-                          flex items-center justify-center p-2 rounded-md border-2 cursor-pointer transition-all
+                          flex items-center justify-center p-1 rounded border cursor-pointer transition-all
                           ${selectedDays.includes(day) 
                             ? 'bg-primary text-primary-foreground border-primary' 
                             : 'bg-background hover-elevate border-border'
@@ -412,7 +412,7 @@ export default function Autorizacoes() {
                         onClick={() => toggleDay(day)}
                         data-testid={`checkbox-day-${day}`}
                       >
-                        <span className="text-sm font-semibold">{String(day).padStart(2, '0')}</span>
+                        <span className="text-xs font-semibold">{String(day).padStart(2, '0')}</span>
                       </div>
                     ))}
                   </div>
