@@ -337,35 +337,64 @@ export default function Autorizacoes() {
                 />
               </div>
 
-              {/* Mês e Dias da Publicação */}
+              {/* Mês e Ano da Publicação */}
               <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="mesPublicacao"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        Mês da Publicação
-                      </FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-mes">
-                            <SelectValue placeholder="Selecione o mês" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {generateMonthOptions().map(option => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <FormLabel className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Período da Publicação
+                </FormLabel>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="mes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mês</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-mes">
+                              <SelectValue placeholder="Selecione o mês" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {meses.map((mes) => (
+                              <SelectItem key={mes} value={mes}>
+                                {mes}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="ano"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ano</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-ano">
+                              <SelectValue placeholder="Selecione o ano" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {anos.map((ano) => (
+                              <SelectItem key={ano} value={ano}>
+                                {ano}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="space-y-3">
                   <FormLabel>Dias da Publicação</FormLabel>
