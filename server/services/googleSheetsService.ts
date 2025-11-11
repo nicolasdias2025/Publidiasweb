@@ -50,24 +50,36 @@ class GoogleSheetsService {
       }
 
       console.log('🔍 Debug: Tamanho das credenciais:', credentialsRaw.length);
-      console.log('🔍 Debug: Primeiros 100 caracteres:', credentialsRaw.substring(0, 100));
+      console.log('🔍 Debug: Primeiros 50 caracteres:', credentialsRaw.substring(0, 50));
 
       let credentials;
+      let credentialsTrimmed = credentialsRaw.trim();
       
       // Tenta primeiro como JSON direto
       try {
-        credentials = JSON.parse(credentialsRaw);
+        credentials = JSON.parse(credentialsTrimmed);
         console.log('📄 Credenciais lidas como JSON direto');
       } catch (jsonError: any) {
         console.log('⚠️  Falha ao ler como JSON direto:', jsonError.message);
+        
         // Se falhar, tenta decodificar de base64
         try {
-          const credentialsJson = Buffer.from(credentialsRaw, 'base64').toString('utf-8');
+          const credentialsJson = Buffer.from(credentialsTrimmed, 'base64').toString('utf-8');
           credentials = JSON.parse(credentialsJson);
           console.log('📄 Credenciais decodificadas de base64');
         } catch (base64Error: any) {
           console.log('⚠️  Falha ao decodificar de base64:', base64Error.message);
-          throw new Error('GOOGLE_SHEETS_CREDENTIALS deve ser um JSON válido ou JSON em base64');
+          
+          // Se ainda falhar, tenta limpar caracteres problemáticos e tentar novamente
+          try {
+            // Remove espaços extras, tabs, e normaliza quebras de linha
+            const cleaned = credentialsTrimmed.replace(/\r\n/g, '\n').replace(/\t/g, ' ');
+            credentials = JSON.parse(cleaned);
+            console.log('📄 Credenciais lidas após limpeza');
+          } catch (cleanError: any) {
+            console.log('⚠️  Falha após limpeza:', cleanError.message);
+            throw new Error('GOOGLE_SHEETS_CREDENTIALS deve ser um JSON válido ou JSON em base64');
+          }
         }
       }
 
