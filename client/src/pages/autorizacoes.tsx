@@ -136,26 +136,22 @@ export default function Autorizacoes() {
     });
   };
 
-  // Gerar meses do ano atual e próximo
-  const generateMonthOptions = () => {
-    const months = [
-      "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-      "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-    ];
+  // Opções de meses e anos
+  const meses = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ];
+  
+  const generateYearOptions = () => {
     const currentYear = new Date().getFullYear();
-    const options = [];
-    
-    for (let year = currentYear; year <= currentYear + 1; year++) {
-      months.forEach((month, index) => {
-        options.push({
-          value: `${month}/${year}`,
-          label: `${month}/${year}`
-        });
-      });
+    const years = [];
+    for (let i = 0; i < 3; i++) {
+      years.push((currentYear + i).toString());
     }
-    
-    return options;
+    return years;
   };
+  
+  const anos = generateYearOptions();
 
   return (
     <div className="space-y-6">
