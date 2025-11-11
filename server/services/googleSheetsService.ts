@@ -49,19 +49,24 @@ class GoogleSheetsService {
         return;
       }
 
+      console.log('🔍 Debug: Tamanho das credenciais:', credentialsRaw.length);
+      console.log('🔍 Debug: Primeiros 100 caracteres:', credentialsRaw.substring(0, 100));
+
       let credentials;
       
       // Tenta primeiro como JSON direto
       try {
         credentials = JSON.parse(credentialsRaw);
         console.log('📄 Credenciais lidas como JSON direto');
-      } catch (jsonError) {
+      } catch (jsonError: any) {
+        console.log('⚠️  Falha ao ler como JSON direto:', jsonError.message);
         // Se falhar, tenta decodificar de base64
         try {
           const credentialsJson = Buffer.from(credentialsRaw, 'base64').toString('utf-8');
           credentials = JSON.parse(credentialsJson);
           console.log('📄 Credenciais decodificadas de base64');
-        } catch (base64Error) {
+        } catch (base64Error: any) {
+          console.log('⚠️  Falha ao decodificar de base64:', base64Error.message);
           throw new Error('GOOGLE_SHEETS_CREDENTIALS deve ser um JSON válido ou JSON em base64');
         }
       }
