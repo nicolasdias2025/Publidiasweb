@@ -1,7 +1,7 @@
 import {
   LayoutDashboard,
   FileText,
-  CheckSquare,
+  Users,
   Receipt,
   Settings,
   Megaphone,
@@ -33,9 +33,9 @@ const menuItems = [
     icon: FileText,
   },
   {
-    title: "Autorizações",
-    url: "/autorizacoes",
-    icon: CheckSquare,
+    title: "Cadastro de Clientes",
+    url: "/clientes",
+    icon: Users,
   },
   {
     title: "Notas Fiscais",

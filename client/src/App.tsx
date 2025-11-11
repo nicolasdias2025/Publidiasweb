@@ -17,7 +17,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/dashboard";
 import Orcamentos from "@/pages/orcamentos";
-import Autorizacoes from "@/pages/autorizacoes";
+import Clientes from "@/pages/clientes";
 import NotasFiscais from "@/pages/notas-fiscais";
 import GestaoAdministrativa from "@/pages/gestao-administrativa";
 import Marketing from "@/pages/marketing";
@@ -42,7 +42,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/orcamentos" component={Orcamentos} />
-      <Route path="/autorizacoes" component={Autorizacoes} />
+      <Route path="/clientes" component={Clientes} />
       <Route path="/notas-fiscais" component={NotasFiscais} />
       <Route path="/gestao-administrativa" component={GestaoAdministrativa} />
       <Route path="/marketing" component={Marketing} />

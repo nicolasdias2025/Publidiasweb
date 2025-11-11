@@ -153,10 +153,10 @@ export const clients = pgTable("clients", {
   // Dados do Cliente
   cnpj: varchar("cnpj", { length: 18 }).notNull(),
   name: text("name").notNull(),
-  address: text("address"),
-  city: text("city"),
-  state: varchar("state", { length: 2 }),
-  zip: varchar("zip", { length: 10 }),
+  address: text("address").notNull(),
+  city: text("city").notNull(),
+  state: varchar("state", { length: 2 }).notNull(),
+  zip: varchar("zip", { length: 10 }).notNull(),
   email: varchar("email"),
   
   // Metadados
