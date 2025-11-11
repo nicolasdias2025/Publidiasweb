@@ -45,9 +45,10 @@ export const sessions = pgTable(
 );
 
 // Tabela de usuários (obrigatória para Replit Auth)
+// Nota: email não é unique pois diferentes providers OIDC podem ter mesmo email
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
+  email: varchar("email"),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),

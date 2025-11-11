@@ -70,15 +70,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/budgets", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      
+      // Log dados recebidos para debug
+      console.log("[POST /api/budgets] Received data:", JSON.stringify(req.body, null, 2));
+      
       const budgetData = insertBudgetSchema.parse({
         ...req.body,
         createdBy: userId,
       });
+      
+      console.log("[POST /api/budgets] Parsed data:", JSON.stringify(budgetData, null, 2));
+      
       const budget = await storage.createBudget(budgetData);
       res.status(201).json(budget);
-    } catch (error) {
-      console.error("Error creating budget:", error);
-      res.status(400).json({ message: "Failed to create budget", error });
+    } catch (error: any) {
+      console.error("Error creating budget - Full error:", error);
+      if (error.name === "ZodError") {
+        console.error("Zod validation errors:", JSON.stringify(error.errors, null, 2));
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      res.status(400).json({ 
+        message: "Failed to create budget", 
+        error: error.message || String(error)
+      });
     }
   });
 

@@ -107,7 +107,7 @@ export default function Orcamentos() {
   // Mutação para criar orçamento
   const createMutation = useMutation({
     mutationFn: async (budgetData: any) => {
-      await apiRequest("/api/budgets", "POST", budgetData);
+      await apiRequest("POST", "/api/budgets", budgetData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/budgets"] });
@@ -141,7 +141,7 @@ export default function Orcamentos() {
   // Mutação para deletar orçamento
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest(`/api/budgets/${id}`, "DELETE");
+      await apiRequest("DELETE", `/api/budgets/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/budgets"] });
