@@ -1,0 +1,63 @@
+Implemente o formulário “Dados da Publicação” para Autorizações, contemplando os requisitos abaixo:
+Campos do formulário:
+	Jornal: campo de texto/autocomplete.
+	Tipo: menu drop-down (impresso, digital, diagramação, etc).
+	Mês da Publicação: campo select/menu (ex: Novembro/2025).
+	Dias da Publicação: 31 checkboxes (de 01 até 31) para o usuário marcar os dias que haverá publicação. O primeiro campo indica o mês/ano da publicação.
+	Col./Linha: número (quantidade de colunas ou linhas).
+	Cm: número (tamanho do anúncio em centímetros).
+	Formato: menu drop-down (padrão e/ou tipos cadastráveis/exemplo: 10x3).
+	Valor “col./linha x cm” em R$: valor unitário da publicação.
+	Desconto (%): número, percentual de desconto sobre o total.
+	Nº de inserções: campo número/calculado AUTOMATICAMENTE, conforme quantidade de dias marcados.
+	Valor Total (R$): campo preenchido AUTOMATICAMENTE, calculado:
+"valor total"=("col./linha"×"cm"×"valor unit" "a"  ˊ"rio")×"nº de inser" "c"  ̒"o"  ̃"es"-"desconto"
+
+	Valor Líquido (R$): campo automático com checkbox do lado.
+	Quando marcado, aplicar 20% de desconto sobre o valor total e exibir o novo valor líquido.
+	Exemplo: Valor líquido = Valor total × 0,8
+	Valor diagramação em R$:
+	Custo da publicação em R$:
+	Observações: campo texto.
+Funcionalidades automáticas obrigatórias:
+	Marcação dos dias (checkbox dos dias 01 a 31) deve contabilizar o número de inserções automaticamente.
+	Ao alterar formato, col./linha, cm, valor ou desconto, recalcular imediatamente o valor total e valor líquido se o checkbox estiver marcado.
+	Se valor de diagramação ou custo for informado, permitir preencher normalmente e incluir no resumo final.
+Requisitos técnicos e UX:
+	Interface clara, agrupando e destacando o mês + grid horizontal de 31 checkboxes para os dias.
+	Controle dos números: não permitir valores negativos, obrigar preenchimento dos principais campos.
+	Exibir feedback visual de campos calculados e bloqueados para edição manual.
+	Adotar um layout que priorize rapidez de preenchimento: sugestões/autocomplete, somatórios automáticos, destaques visuais nos campos totais, botões grandes para marcar dias facilmente.
+	Permitir edição manual de observações.
+	Documentar no README o cálculo de cada campo automático.
+________________________________________
+Fluxo ideal do preenchimento:
+	Usuário escolhe jornal, tipo, mês, marca os dias (checkbox).
+	Preenche valores de col./linha, cm, valor unitário, desconto (se houver), valor de diagramação e custo.
+	Sistema calcula nº de inserções (dias marcados), valor total (seguindo a fórmula), valor líquido (se marcado o checkbox).
+	Usuário revisa, ajusta e pode preencher observações.
+
+Implementações obrigatórias:
+	Todos os campos e automações conforme descrito no prompt anterior.
+	Botão: Adicione ao final do bloco/formulário de dados da publicação o botão destacado “[GERAR PDF]”.
+	Geração automática do PDF:
+	Formato do PDF: meia página A4 (meia folha vertical)
+	No PDF, NÃO incluir os campos “Valor de diagramação” nem “Custo da publicação”.
+	Inserir resumo/fórmula de faturamento ao cliente:
+	Se o “checkbox Valor Líquido” NÃO estiver marcado, inserir a frase:
+“FAVOR FATURAR PELO VALOR BRUTO CONTRA O CLIENTE”
+	Se o “checkbox Valor Líquido” estiver marcado, inserir a frase:
+“FAVOR FATURAR PELO VALOR LÍQUIDO CONTRA O CLIENTE”
+	Exibir todas as demais informações: Dados do Cliente, Dados da Publicação, cálculo do Valor Total (com desconto se houver), Valor Líquido (se aplicável), Nº de inserções, Tipo de publicação, Dias de veiculação, Observações.
+	Layout do PDF deve ser limpo, legível, e pronto para impressão/envio.
+Requisitos adicionais:
+	Após clicar em “[GERAR PDF]”, mostrar preview (modal ou tela) ou iniciar download automático.
+	Permitir visualizar/baixar o PDF antes do envio.
+	Documentar regras de inclusão/exclusão de campos do PDF e explicar lógica da frase de faturamento.
+	Layout compactado para meia página A4: recomenda-se usar um template com logo da empresa (se houver), títulos claros e tabela/grade com os principais dados.
+________________________________________
+Fluxo do usuário:
+	Preenche todos os campos dos dados da publicação.
+	Marca/desmarca o checkbox de valor líquido.
+	Clica em [GERAR PDF].
+	PDF é gerado seguindo regras acima, pronto para baixar ou visualizar.
