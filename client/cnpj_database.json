@@ -1,0 +1,22 @@
+{
+  "empresas": [
+    {
+      "cnpj": "91.338.558/0001-37",
+      "razao_social": "MUNICIPIO DE GLORINHA",
+      "endereco": "AV DR. POMPILIO GOMES SOBRINHO",
+      "cidade": "Glorinha",
+      "cep": "90000-000",
+      "uf": "RS",
+      "email": "prefeitura@glorinha.rs.gov.br"
+    },
+    {
+      "cnpj": "88.847.660/0001-53",
+      "razao_social": "PUBLIDIAS SERVIÇO DE PUBLICIDADE LTDA",
+      "endereco": "RUA MARIO ANTUNES DA CUNHA",
+      "cidade": "Porto Alegre",
+      "cep": "90340-000",
+      "uf": "RS",
+      "email": "publidias@publidias.com.br"
+    }
+  ]
+}
