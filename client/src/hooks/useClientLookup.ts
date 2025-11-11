@@ -34,9 +34,9 @@ export function useClientLookup(cnpj: string) {
   }, [cnpj]);
 
   const { data, isLoading, error, isError } = useQuery<ClientData>({
-    queryKey: ['/api/clients', debouncedCnpj],
+    queryKey: ['/api/clients/lookup', debouncedCnpj],
     queryFn: async () => {
-      const response = await fetch(`/api/clients?cnpj=${debouncedCnpj}`, {
+      const response = await fetch(`/api/clients/lookup?cnpj=${debouncedCnpj}`, {
         credentials: 'include',
       });
       
