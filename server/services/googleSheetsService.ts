@@ -42,16 +42,33 @@ class GoogleSheetsService {
    */
   private initializeAuth() {
     try {
-      const credentialsBase64 = process.env.GOOGLE_SHEETS_CREDENTIALS;
+      const credentialsRaw = process.env.GOOGLE_SHEETS_CREDENTIALS;
       
-      if (!credentialsBase64) {
+      if (!credentialsRaw) {
         console.warn('⚠️  GOOGLE_SHEETS_CREDENTIALS não configurado. Integração Google Sheets desabilitada.');
         return;
       }
 
-      // Decodifica credenciais de base64
-      const credentialsJson = Buffer.from(credentialsBase64, 'base64').toString('utf-8');
-      const credentials = JSON.parse(credentialsJson);
+      let credentials;
+      
+      // Tenta primeiro como JSON direto
+      try {
+        credentials = JSON.parse(credentialsRaw);
+        console.log('📄 Credenciais lidas como JSON direto');
+      } catch (jsonError) {
+        // Se falhar, tenta decodificar de base64
+        try {
+          const credentialsJson = Buffer.from(credentialsRaw, 'base64').toString('utf-8');
+          credentials = JSON.parse(credentialsJson);
+          console.log('📄 Credenciais decodificadas de base64');
+        } catch (base64Error) {
+          throw new Error('GOOGLE_SHEETS_CREDENTIALS deve ser um JSON válido ou JSON em base64');
+        }
+      }
+
+      if (!credentials.client_email || !credentials.private_key) {
+        throw new Error('GOOGLE_SHEETS_CREDENTIALS inválido: faltam client_email ou private_key');
+      }
 
       this.auth = new JWT({
         email: credentials.client_email,
@@ -59,7 +76,7 @@ class GoogleSheetsService {
         scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
       });
 
-      console.log('✅ Google Sheets Service inicializado com sucesso');
+      console.log(`✅ Google Sheets Service inicializado (${credentials.client_email})`);
     } catch (error) {
       console.error('❌ Erro ao inicializar Google Sheets Service:', error);
       this.auth = null;
