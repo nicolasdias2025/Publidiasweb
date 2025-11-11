@@ -149,6 +149,16 @@ export const approvals = pgTable("approvals", {
   value: decimal("value", { precision: 12, scale: 2 }).notNull(),
   description: text("description").notNull(),
   status: varchar("status", { length: 20 }).notNull().default("pending"),
+  
+  // Dados do Cliente (integração Google Sheets)
+  clientCnpj: varchar("client_cnpj", { length: 18 }),
+  clientName: text("client_name"),
+  clientAddress: text("client_address"),
+  clientCity: text("client_city"),
+  clientState: varchar("client_state", { length: 2 }),
+  clientZip: varchar("client_zip", { length: 10 }),
+  clientEmail: varchar("client_email"),
+  
   approvedBy: varchar("approved_by").references(() => users.id),
   approvalComment: text("approval_comment"),
   createdBy: varchar("created_by").notNull().references(() => users.id),

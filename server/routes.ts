@@ -121,6 +121,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== Client Lookup Route (Google Sheets Integration) ==========
+  
+  app.get("/api/clients", isAuthenticated, async (req, res) => {
+    try {
+      const { cnpj } = req.query;
+      
+      if (!cnpj || typeof cnpj !== 'string') {
+        return res.status(400).json({ 
+          message: "CNPJ é obrigatório" 
+        });
+      }
+
+      // Validação de formato: deve ter 14 dígitos após normalização
+      const normalizedCnpj = cnpj.replace(/\D/g, '');
+      if (normalizedCnpj.length !== 14) {
+        return res.status(400).json({ 
+          message: "CNPJ inválido. Deve conter 14 dígitos." 
+        });
+      }
+
+      const { googleSheetsService } = await import("./services/googleSheetsService");
+      const clientData = await googleSheetsService.findClientByCnpj(cnpj);
+      
+      if (!clientData) {
+        return res.status(404).json({ 
+          message: "Cliente não cadastrado. Preencha os dados manualmente." 
+        });
+      }
+      
+      res.json(clientData);
+    } catch (error: any) {
+      console.error("Error fetching client data:", error);
+      res.status(500).json({ 
+        message: error.message || "Erro ao consultar dados do cliente" 
+      });
+    }
+  });
+
   // ========== Approval Routes ==========
   
   app.get("/api/approvals", isAuthenticated, async (req, res) => {
