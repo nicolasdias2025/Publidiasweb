@@ -35,6 +35,18 @@ export function useClientLookup(cnpj: string) {
 
   const { data, isLoading, error, isError } = useQuery<ClientData>({
     queryKey: ['/api/clients', debouncedCnpj],
+    queryFn: async () => {
+      const response = await fetch(`/api/clients?cnpj=${debouncedCnpj}`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Erro ao buscar cliente' }));
+        throw { status: response.status, message: errorData.message };
+      }
+      
+      return response.json();
+    },
     enabled: debouncedCnpj.length === 14,
     retry: false,
     staleTime: Infinity,
