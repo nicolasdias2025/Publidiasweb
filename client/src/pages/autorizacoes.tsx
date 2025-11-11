@@ -111,6 +111,9 @@ export default function Autorizacoes() {
   const aplicarValorLiquido = form.watch("aplicarValorLiquido");
   const numeroInsercoes = selectedDays.length;
 
+  // Formato = Col./Linha × Cm
+  const formato = colLinha * cm;
+
   // Subtotal = (col × cm × valorUnitario) × nºInserções
   const subtotal = colLinha * cm * valorUnitario * numeroInsercoes;
   
