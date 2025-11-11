@@ -1,15 +1,264 @@
+/**
+ * API Routes - Sistema Corporativo
+ * 
+ * Define todas as rotas REST do sistema seguindo o padrão:
+ * - GET /api/resource - Lista todos
+ * - GET /api/resource/:id - Busca por ID
+ * - POST /api/resource - Cria novo
+ * - PATCH /api/resource/:id - Atualiza
+ * - DELETE /api/resource/:id - Remove
+ */
+
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
+import { 
+  insertBudgetSchema,
+  insertApprovalSchema,
+  insertInvoiceSchema,
+  insertDocumentSchema,
+  insertProcessSchema,
+  insertCampaignSchema,
+  insertLeadSchema 
+} from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+  // ========== Auth Setup ==========
+  await setupAuth(app);
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+  // ========== Auth Routes ==========
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // ========== Budget Routes ==========
+  
+  // Lista todos os orçamentos
+  app.get("/api/budgets", isAuthenticated, async (req, res) => {
+    try {
+      const budgets = await storage.getBudgets();
+      res.json(budgets);
+    } catch (error) {
+      console.error("Error fetching budgets:", error);
+      res.status(500).json({ message: "Failed to fetch budgets" });
+    }
+  });
+
+  // Busca orçamento por ID
+  app.get("/api/budgets/:id", isAuthenticated, async (req, res) => {
+    try {
+      const budget = await storage.getBudget(req.params.id);
+      if (!budget) {
+        return res.status(404).json({ message: "Budget not found" });
+      }
+      res.json(budget);
+    } catch (error) {
+      console.error("Error fetching budget:", error);
+      res.status(500).json({ message: "Failed to fetch budget" });
+    }
+  });
+
+  // Cria novo orçamento
+  app.post("/api/budgets", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const budgetData = insertBudgetSchema.parse({
+        ...req.body,
+        createdBy: userId,
+      });
+      const budget = await storage.createBudget(budgetData);
+      res.status(201).json(budget);
+    } catch (error) {
+      console.error("Error creating budget:", error);
+      res.status(400).json({ message: "Failed to create budget", error });
+    }
+  });
+
+  // Atualiza orçamento
+  app.patch("/api/budgets/:id", isAuthenticated, async (req, res) => {
+    try {
+      const budget = await storage.updateBudget(req.params.id, req.body);
+      res.json(budget);
+    } catch (error) {
+      console.error("Error updating budget:", error);
+      res.status(400).json({ message: "Failed to update budget" });
+    }
+  });
+
+  // Deleta orçamento
+  app.delete("/api/budgets/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteBudget(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting budget:", error);
+      res.status(500).json({ message: "Failed to delete budget" });
+    }
+  });
+
+  // ========== Approval Routes ==========
+  
+  app.get("/api/approvals", isAuthenticated, async (req, res) => {
+    try {
+      const approvals = await storage.getApprovals();
+      res.json(approvals);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch approvals" });
+    }
+  });
+
+  app.post("/api/approvals", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const approvalData = insertApprovalSchema.parse({
+        ...req.body,
+        createdBy: userId,
+      });
+      const approval = await storage.createApproval(approvalData);
+      res.status(201).json(approval);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to create approval" });
+    }
+  });
+
+  app.patch("/api/approvals/:id", isAuthenticated, async (req, res) => {
+    try {
+      const approval = await storage.updateApproval(req.params.id, req.body);
+      res.json(approval);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update approval" });
+    }
+  });
+
+  // ========== Invoice Routes ==========
+  
+  app.get("/api/invoices", isAuthenticated, async (req, res) => {
+    try {
+      const invoices = await storage.getInvoices();
+      res.json(invoices);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch invoices" });
+    }
+  });
+
+  app.post("/api/invoices", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const invoiceData = insertInvoiceSchema.parse({
+        ...req.body,
+        issuedBy: userId,
+      });
+      const invoice = await storage.createInvoice(invoiceData);
+      res.status(201).json(invoice);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to create invoice" });
+    }
+  });
+
+  // ========== Document Routes ==========
+  
+  app.get("/api/documents", isAuthenticated, async (req, res) => {
+    try {
+      const documents = await storage.getDocuments();
+      res.json(documents);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch documents" });
+    }
+  });
+
+  app.post("/api/documents", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const documentData = insertDocumentSchema.parse({
+        ...req.body,
+        uploadedBy: userId,
+      });
+      const document = await storage.createDocument(documentData);
+      res.status(201).json(document);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to create document" });
+    }
+  });
+
+  // ========== Process Routes ==========
+  
+  app.get("/api/processes", isAuthenticated, async (req, res) => {
+    try {
+      const processes = await storage.getProcesses();
+      res.json(processes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch processes" });
+    }
+  });
+
+  app.post("/api/processes", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const processData = insertProcessSchema.parse({
+        ...req.body,
+        createdBy: userId,
+      });
+      const process = await storage.createProcess(processData);
+      res.status(201).json(process);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to create process" });
+    }
+  });
+
+  // ========== Campaign Routes ==========
+  
+  app.get("/api/campaigns", isAuthenticated, async (req, res) => {
+    try {
+      const campaigns = await storage.getCampaigns();
+      res.json(campaigns);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch campaigns" });
+    }
+  });
+
+  app.post("/api/campaigns", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const campaignData = insertCampaignSchema.parse({
+        ...req.body,
+        createdBy: userId,
+      });
+      const campaign = await storage.createCampaign(campaignData);
+      res.status(201).json(campaign);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to create campaign" });
+    }
+  });
+
+  // ========== Lead Routes ==========
+  
+  app.get("/api/leads", isAuthenticated, async (req, res) => {
+    try {
+      const leads = await storage.getLeads();
+      res.json(leads);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch leads" });
+    }
+  });
+
+  app.post("/api/leads", isAuthenticated, async (req: any, res) => {
+    try {
+      const leadData = insertLeadSchema.parse(req.body);
+      const lead = await storage.createLead(leadData);
+      res.status(201).json(lead);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to create lead" });
+    }
+  });
 
   const httpServer = createServer(app);
-
   return httpServer;
 }

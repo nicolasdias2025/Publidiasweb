@@ -1,3 +1,10 @@
+/**
+ * Database Configuration
+ * 
+ * Configuração do cliente PostgreSQL usando Neon Serverless
+ * compatível com ambiente UOL Host e Replit.
+ */
+
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
