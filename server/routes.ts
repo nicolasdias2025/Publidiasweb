@@ -15,7 +15,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { 
   insertBudgetSchema,
-  insertApprovalSchema,
+  insertClientSchema,
   insertInvoiceSchema,
   insertDocumentSchema,
   insertProcessSchema,
@@ -121,9 +121,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ========== Client Lookup Route (Google Sheets Integration) ==========
+  // ========== Client Routes ==========
   
+  // Lista todos os clientes
   app.get("/api/clients", isAuthenticated, async (req, res) => {
+    try {
+      const clients = await storage.getClients();
+      res.json(clients);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      res.status(500).json({ message: "Failed to fetch clients" });
+    }
+  });
+
+  // Busca cliente por CNPJ no Google Sheets (lookup)
+  app.get("/api/clients/lookup", isAuthenticated, async (req, res) => {
     try {
       const { cnpj } = req.query;
       
@@ -159,37 +171,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ========== Approval Routes ==========
-  
-  app.get("/api/approvals", isAuthenticated, async (req, res) => {
+  // Busca cliente por ID
+  app.get("/api/clients/:id", isAuthenticated, async (req, res) => {
     try {
-      const approvals = await storage.getApprovals();
-      res.json(approvals);
+      const client = await storage.getClient(req.params.id);
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+      res.json(client);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch approvals" });
+      console.error("Error fetching client:", error);
+      res.status(500).json({ message: "Failed to fetch client" });
     }
   });
 
-  app.post("/api/approvals", isAuthenticated, async (req: any, res) => {
+  // Cria novo cliente
+  app.post("/api/clients", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const approvalData = insertApprovalSchema.parse({
+      const clientData = insertClientSchema.parse({
         ...req.body,
         createdBy: userId,
       });
-      const approval = await storage.createApproval(approvalData);
-      res.status(201).json(approval);
+      const client = await storage.createClient(clientData);
+      res.status(201).json(client);
     } catch (error) {
-      res.status(400).json({ message: "Failed to create approval" });
+      console.error("Error creating client:", error);
+      res.status(400).json({ 
+        message: "Failed to create client",
+        error: error.message || String(error)
+      });
     }
   });
 
-  app.patch("/api/approvals/:id", isAuthenticated, async (req, res) => {
+  // Atualiza cliente
+  app.patch("/api/clients/:id", isAuthenticated, async (req, res) => {
     try {
-      const approval = await storage.updateApproval(req.params.id, req.body);
-      res.json(approval);
+      const client = await storage.updateClient(req.params.id, req.body);
+      res.json(client);
     } catch (error) {
-      res.status(400).json({ message: "Failed to update approval" });
+      console.error("Error updating client:", error);
+      res.status(400).json({ message: "Failed to update client" });
+    }
+  });
+
+  // Deleta cliente
+  app.delete("/api/clients/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteClient(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      res.status(500).json({ message: "Failed to delete client" });
     }
   });
 
