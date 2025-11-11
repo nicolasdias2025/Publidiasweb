@@ -71,7 +71,12 @@ Valor Total = Σ(valores_linhas_marcadas) + diagramação
 Workflow de aprovação para solicitações internas (compras, viagens, contratações, treinamentos).
 
 **Funcionalidades:**
-- Criar solicitação de autorização
+- Criar solicitação de autorização com formulário "Dados do Cliente"
+- **Integração Google Sheets**: Autopreenchimento de dados por CNPJ
+  - Busca automática com debounce de 500ms
+  - Cache em memória (TTL 1 hora)
+  - Fallback para preenchimento manual se cliente não encontrado
+  - Validação de formato CNPJ (14 dígitos)
 - Aprovar/rejeitar solicitações
 - Adicionar comentários
 - Histórico de decisões
@@ -555,6 +560,10 @@ SESSION_SECRET=<gerar-com: openssl rand -base64 32>
 REPL_ID=<mesmo-id-usado-no-replit>
 ISSUER_URL=https://replit.com/oidc
 
+# Google Sheets Integration (configurar manualmente)
+GOOGLE_SHEETS_CREDENTIALS=<credenciais-service-account-base64>
+GOOGLE_SHEETS_SHEET_ID=<id-da-planilha>
+
 # Ambiente
 NODE_ENV=production
 PORT=5000
@@ -577,6 +586,226 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 - Use `.gitignore` para excluir arquivos sensíveis
 - No servidor de produção, armazene secrets com segurança
 - Rotacione secrets periodicamente
+
+---
+
+## 📊 Configuração da Integração Google Sheets
+
+O módulo de Autorizações inclui integração com Google Sheets para autopreenchimento de dados de clientes por CNPJ.
+
+### Pré-requisitos
+
+- Conta Google (Gmail)
+- Planilha Google Sheets com dados dos clientes
+- Acesso ao Google Cloud Console
+
+### Estrutura da Planilha
+
+Sua planilha deve ter a seguinte estrutura na **Sheet1** (primeira aba):
+
+| cnpj | razao_social | endereco | cidade | cep | uf | email |
+|------|--------------|----------|--------|-----|----|----- |
+| 91.338.558/0001-37 | MUNICIPIO DE GLORINHA | AV DR. POMPILIO GOMES SOBRINHO | Glorinha | 90000-000 | RS | prefeitura@glorinha.rs.gov.br |
+| 88.847.660/0001-53 | PUBLIDIAS SERVIÇO DE PUBLICIDADE LTDA | RUA MARIO ANTUNES DA CUNHA | Porto Alegre | 90340-000 | RS | publidias@publidias.com.br |
+
+**Observações:**
+- A primeira linha deve conter os cabeçalhos exatamente como acima
+- Os dados começam na linha 2
+- O CNPJ pode estar formatado (com pontos e traços) ou sem formatação
+- Todos os campos são opcionais, mas CNPJ é usado como chave de busca
+
+### Passo 1: Criar Service Account no Google Cloud
+
+1. Acesse https://console.cloud.google.com
+2. Crie um novo projeto ou selecione um existente
+3. Navegue até **APIs & Services** → **Enable APIs and Services**
+4. Busque e ative a **Google Sheets API**
+5. Vá para **APIs & Services** → **Credentials**
+6. Clique em **Create Credentials** → **Service Account**
+7. Preencha:
+   - **Service account name**: `sheets-autorizacoes` (ou nome de sua escolha)
+   - **Service account ID**: (será gerado automaticamente)
+   - **Role**: Project → Editor (ou permissões mínimas conforme necessário)
+8. Clique em **Done**
+
+### Passo 2: Gerar Chave JSON
+
+1. Na lista de Service Accounts, clique na conta recém-criada
+2. Vá para a aba **Keys**
+3. Clique em **Add Key** → **Create New Key**
+4. Selecione **JSON** como formato
+5. Clique em **Create**
+6. Um arquivo JSON será baixado automaticamente
+   - **Guarde este arquivo com segurança!**
+   - Exemplo de nome: `sistema-corporativo-abc123.json`
+
+### Passo 3: Compartilhar a Planilha
+
+1. Abra a planilha Google Sheets que contém os dados dos clientes
+2. Clique em **Compartilhar** (botão verde no canto superior direito)
+3. No arquivo JSON baixado, localize o campo `client_email`
+   - Exemplo: `sheets-autorizacoes@projeto-123456.iam.gserviceaccount.com`
+4. Cole este email no campo de compartilhamento
+5. Defina permissão como **Viewer** (leitura) ou **Editor** (leitura/escrita)
+6. Clique em **Share** / **Compartilhar**
+
+### Passo 4: Obter ID da Planilha
+
+1. Na URL da sua planilha Google Sheets, copie o ID:
+   ```
+   https://docs.google.com/spreadsheets/d/1ksScLRs1L1KL9IzgxLKkxJFX9DQyO4tMhXzs46WLDZ4/edit
+                                          ↑_________________________________↑
+                                          Este é o GOOGLE_SHEETS_SHEET_ID
+   ```
+2. Neste exemplo: `1ksScLRs1L1KL9IzgxLKkxJFX9DQyO4tMhXzs46WLDZ4`
+
+### Passo 5: Configurar Variáveis de Ambiente
+
+#### No Replit (Desenvolvimento)
+
+1. No painel lateral do Replit, vá para **Secrets** (ícone de cadeado)
+2. Adicione duas variáveis:
+
+**GOOGLE_SHEETS_CREDENTIALS:**
+```bash
+# Converta o arquivo JSON para base64:
+cat sistema-corporativo-abc123.json | base64 -w 0
+
+# Cole o resultado (uma linha longa) no valor do secret
+```
+
+**GOOGLE_SHEETS_SHEET_ID:**
+```
+1ksScLRs1L1KL9IzgxLKkxJFX9DQyO4tMhXzs46WLDZ4
+```
+
+#### Na UOL Host (Produção)
+
+Edite o arquivo `.env` no servidor:
+
+```bash
+# No SSH do servidor
+nano ~/public_html/sistema-corporativo/.env
+```
+
+Adicione:
+
+```env
+# Google Sheets Integration
+GOOGLE_SHEETS_CREDENTIALS=eyJjbGllbnRfZW1haWwiOiJzaGVldHMtYXV0...
+GOOGLE_SHEETS_SHEET_ID=1ksScLRs1L1KL9IzgxLKkxJFX9DQyO4tMhXzs46WLDZ4
+```
+
+### Passo 6: Testar a Integração
+
+1. Reinicie a aplicação:
+   ```bash
+   # No Replit: clique em "Stop" e depois "Run"
+   
+   # Na UOL Host via PM2:
+   pm2 restart sistema-corporativo
+   ```
+
+2. Verifique os logs do servidor:
+   ```
+   ✅ Google Sheets Service inicializado com sucesso
+   ```
+
+3. Teste no navegador:
+   - Acesse o módulo **Autorizações**
+   - Clique em **Nova Solicitação**
+   - No formulário "Dados do Cliente", digite um CNPJ válido da planilha
+   - Aguarde 500ms (debounce)
+   - Os campos devem ser preenchidos automaticamente
+
+### Como Funciona
+
+1. **Debounce**: Quando o usuário digita o CNPJ, o sistema aguarda 500ms antes de fazer a busca
+2. **Validação**: Verifica se o CNPJ tem 14 dígitos (remove caracteres especiais)
+3. **Cache**: Primeira busca consulta Google Sheets; resultados ficam em cache por 1 hora
+4. **Autopreenchimento**: Se cliente encontrado, preenche automaticamente:
+   - Razão Social
+   - Endereço Completo
+   - Cidade
+   - UF (Estado)
+   - CEP
+   - E-mail
+5. **Fallback Manual**: Se cliente não encontrado, exibe mensagem e permite preenchimento manual
+6. **Edição Livre**: Todos os campos permanecem editáveis após autopreenchimento
+
+### Mensagens do Sistema
+
+- ✅ **"Cliente encontrado!"** - Dados preenchidos automaticamente
+- ⚠️ **"Cliente não cadastrado. Preencha os dados manualmente."** - CNPJ não existe na planilha
+- 🔍 **Spinner de loading** - Buscando dados no Google Sheets
+- ❌ **Erro de integração** - Problema de configuração ou conexão
+
+### Solução de Problemas
+
+#### "Google Sheets Service não está configurado"
+
+Verifique se as variáveis de ambiente estão corretas:
+```bash
+# Checar se existe
+echo $GOOGLE_SHEETS_CREDENTIALS
+echo $GOOGLE_SHEETS_SHEET_ID
+
+# Ambas devem retornar valores
+```
+
+#### "Erro ao consultar Google Sheets"
+
+1. Verifique se a planilha foi compartilhada com o email da Service Account
+2. Confirme se a Google Sheets API está ativada no Google Cloud Console
+3. Verifique os logs do servidor para mais detalhes
+
+#### Cache não está funcionando
+
+Os logs do servidor mostram se é cache HIT ou MISS:
+```
+🎯 Cache HIT para CNPJ: 91.338.558/0001-37
+🔍 Cache MISS - Buscando CNPJ 88.847.660/0001-53 no Google Sheets...
+```
+
+#### Limpar cache manualmente
+
+O cache é em memória e se renova automaticamente após 1 hora. Para forçar renovação, reinicie a aplicação:
+
+```bash
+# Replit: Stop e Run novamente
+# UOL Host:
+pm2 restart sistema-corporativo
+```
+
+### Segurança
+
+✅ **Práticas Recomendadas:**
+- Service Account com permissões mínimas necessárias
+- Planilha compartilhada apenas com a Service Account
+- Credenciais armazenadas em variáveis de ambiente (nunca no código)
+- Credentials em base64 para evitar problemas com quebras de linha
+
+❌ **NÃO FAÇA:**
+- Não commite o arquivo JSON no Git
+- Não exponha as credenciais no frontend
+- Não compartilhe a planilha publicamente
+- Não use API Key (use Service Account)
+
+### Manutenção
+
+**Atualizar dados na planilha:**
+- Edite diretamente no Google Sheets
+- Mudanças estarão disponíveis após expiração do cache (1 hora)
+- Ou reinicie a aplicação para forçar atualização imediata
+
+**Adicionar novos clientes:**
+- Basta adicionar nova linha na planilha com o CNPJ e demais dados
+- Mantenha a estrutura das colunas
+
+**Remover/Desativar integração:**
+- Remova as variáveis `GOOGLE_SHEETS_CREDENTIALS` e `GOOGLE_SHEETS_SHEET_ID`
+- Reinicie a aplicação
+- O formulário continuará funcionando, mas sem autopreenchimento
 
 ---
 
