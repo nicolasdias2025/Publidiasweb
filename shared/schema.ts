@@ -138,55 +138,48 @@ export type InsertBudget = z.infer<typeof insertBudgetSchema>;
 export type Budget = typeof budgets.$inferSelect;
 
 // =============================================================================
-// MÓDULO: AUTORIZAÇÕES
+// MÓDULO: CADASTRO DE CLIENTES (com integração Google Sheets)
 // =============================================================================
 
-export const approvals = pgTable("approvals", {
+/**
+ * Tabela de Clientes
+ * 
+ * Cadastro de clientes com integração Google Sheets para autopreenchimento por CNPJ.
+ * Permite cadastro manual ou automático via busca na planilha.
+ */
+export const clients = pgTable("clients", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  type: text("type").notNull(),
-  requester: text("requester").notNull(),
-  department: text("department").notNull(),
-  value: decimal("value", { precision: 12, scale: 2 }).notNull(),
-  description: text("description").notNull(),
-  status: varchar("status", { length: 20 }).notNull().default("pending"),
   
-  // Dados do Cliente (integração Google Sheets)
-  clientCnpj: varchar("client_cnpj", { length: 18 }),
-  clientName: text("client_name"),
-  clientAddress: text("client_address"),
-  clientCity: text("client_city"),
-  clientState: varchar("client_state", { length: 2 }),
-  clientZip: varchar("client_zip", { length: 10 }),
-  clientEmail: varchar("client_email"),
+  // Dados do Cliente
+  cnpj: varchar("cnpj", { length: 18 }).notNull(),
+  name: text("name").notNull(),
+  address: text("address"),
+  city: text("city"),
+  state: varchar("state", { length: 2 }),
+  zip: varchar("zip", { length: 10 }),
+  email: varchar("email"),
   
-  approvedBy: varchar("approved_by").references(() => users.id),
-  approvalComment: text("approval_comment"),
+  // Metadados
   createdBy: varchar("created_by").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const approvalsRelations = relations(approvals, ({ one }) => ({
+export const clientsRelations = relations(clients, ({ one }) => ({
   creator: one(users, {
-    fields: [approvals.createdBy],
-    references: [users.id],
-  }),
-  approver: one(users, {
-    fields: [approvals.approvedBy],
+    fields: [clients.createdBy],
     references: [users.id],
   }),
 }));
 
-export const insertApprovalSchema = createInsertSchema(approvals).omit({
+export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  approvedBy: true,
-  approvalComment: true,
 });
 
-export type InsertApproval = z.infer<typeof insertApprovalSchema>;
-export type Approval = typeof approvals.$inferSelect;
+export type InsertClient = z.infer<typeof insertClientSchema>;
+export type Client = typeof clients.$inferSelect;
 
 // =============================================================================
 // MÓDULO: NOTAS FISCAIS
