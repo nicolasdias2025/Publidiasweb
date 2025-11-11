@@ -31,7 +31,7 @@ class GoogleSheetsService {
   private auth: JWT | null = null;
   private cache: Map<string, CacheEntry> = new Map();
   private readonly CACHE_TTL_MS = 60 * 60 * 1000; // 1 hora
-  private readonly SHEET_RANGE = 'Sheet1!A2:G'; // Começa na linha 2 (pula cabeçalho)
+  private readonly SHEET_RANGE = 'A2:G'; // Usa primeira aba automaticamente, começa na linha 2
 
   constructor() {
     this.initializeAuth();
@@ -48,9 +48,6 @@ class GoogleSheetsService {
         console.warn('⚠️  GOOGLE_SHEETS_CREDENTIALS não configurado. Integração Google Sheets desabilitada.');
         return;
       }
-
-      console.log('🔍 Debug: Tamanho das credenciais:', credentialsRaw.length);
-      console.log('🔍 Debug: Primeiros 50 caracteres:', credentialsRaw.substring(0, 50));
 
       let credentials;
       let credentialsTrimmed = credentialsRaw.trim();

@@ -111,11 +111,14 @@ The application is organized into six main functional modules:
    - Client email management
    - Status tracking (draft, pending, approved)
 
-2. **Autorizações (Approvals)** - Workflow management
-   - Request type categorization
-   - Department tracking
-   - Approval status (pending, approved, rejected)
-   - Request value and description
+2. **Autorizações (Approvals)** - Workflow management with Google Sheets integration
+   - Two-part form: Client data + Publication data
+   - **Auto-fill client data**: Enter CNPJ → automatically fills Razão Social, Email, Endereço, Cidade, UF, CEP from Google Sheets
+   - Accepts CNPJ with or without formatting (88.847.660/0001-53 or 88847660000153)
+   - Real-time lookup with 500ms debounce and loading indicator
+   - 1-hour cache for improved performance
+   - Request type categorization and status tracking
+   - Department tracking and approval workflow
 
 3. **Notas Fiscais (Invoices)** - Invoice management
    - Client invoicing with tax calculations
@@ -158,6 +161,39 @@ The application is organized into six main functional modules:
 - Primary: Replit (native integration)
 - Alternative: UOL Host (PostgreSQL compatible)
 - Database: Any PostgreSQL instance via `DATABASE_URL`
+
+### Google Sheets Integration
+
+**Service Implementation:**
+- Singleton service (`server/services/googleSheetsService.ts`) for Google Sheets API interaction
+- Service Account authentication using `googleapis` library
+- In-memory cache with 1-hour TTL for optimal performance
+
+**Configuration:**
+- `GOOGLE_SHEETS_CREDENTIALS`: Service Account JSON (supports raw JSON or base64 encoded)
+- `GOOGLE_SHEETS_SHEET_ID`: Target spreadsheet ID
+- Sheet structure: First sheet, columns A-G (CNPJ, Razão Social, Endereço, Cidade, CEP, UF, Email)
+- Range: `A2:G` (row 1 reserved for headers)
+
+**Features:**
+- CNPJ normalization: Accepts formatted (88.847.660/0001-53) or unformatted (88847660000153)
+- Automatic client data lookup via `GET /api/clients/lookup?cnpj={cnpj}`
+- Frontend hook `useClientLookup` with 500ms debounce
+- Loading indicators and toast notifications
+- Cache management with hit/miss logging
+
+**API Response:**
+```json
+{
+  "cnpj": "88.847.660/0001-53",
+  "razaoSocial": "Company Name",
+  "email": "contact@company.com",
+  "endereco": "Street Address",
+  "cidade": "City",
+  "cep": "12345-678",
+  "uf": "SP"
+}
+```
 
 ## External Dependencies
 
