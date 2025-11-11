@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   FileText,
   Users,
+  FileCheck,
   Receipt,
   Settings,
   Megaphone,
@@ -36,6 +37,11 @@ const menuItems = [
     title: "Cadastro de Clientes",
     url: "/clientes",
     icon: Users,
+  },
+  {
+    title: "Autorizações",
+    url: "/autorizacoes",
+    icon: FileCheck,
   },
   {
     title: "Notas Fiscais",

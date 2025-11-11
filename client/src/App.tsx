@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/dashboard";
 import Orcamentos from "@/pages/orcamentos";
 import Clientes from "@/pages/clientes";
+import Autorizacoes from "@/pages/autorizacoes";
 import NotasFiscais from "@/pages/notas-fiscais";
 import GestaoAdministrativa from "@/pages/gestao-administrativa";
 import Marketing from "@/pages/marketing";
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/orcamentos" component={Orcamentos} />
       <Route path="/clientes" component={Clientes} />
+      <Route path="/autorizacoes" component={Autorizacoes} />
       <Route path="/notas-fiscais" component={NotasFiscais} />
       <Route path="/gestao-administrativa" component={GestaoAdministrativa} />
       <Route path="/marketing" component={Marketing} />
