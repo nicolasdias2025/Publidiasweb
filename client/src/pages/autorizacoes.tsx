@@ -455,30 +455,16 @@ export default function Autorizacoes() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="formato"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Formato</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-formato">
-                            <SelectValue placeholder="Selecione o formato" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="padrao">Padrão</SelectItem>
-                          <SelectItem value="10x3">10x3</SelectItem>
-                          <SelectItem value="10x5">10x5</SelectItem>
-                          <SelectItem value="15x5">15x5</SelectItem>
-                          <SelectItem value="personalizado">Personalizado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div>
+                  <FormLabel>Formato (Col./Linha × Cm)</FormLabel>
+                  <Input 
+                    value={formato.toFixed(2)} 
+                    readOnly 
+                    className="bg-muted font-semibold"
+                    data-testid="display-formato"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Calculado automaticamente</p>
+                </div>
 
                 <FormField
                   control={form.control}
