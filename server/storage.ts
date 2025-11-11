@@ -8,7 +8,7 @@
 import {
   users,
   budgets,
-  approvals,
+  clients,
   invoices,
   documents,
   processes,
@@ -18,8 +18,8 @@ import {
   type UpsertUser,
   type Budget,
   type InsertBudget,
-  type Approval,
-  type InsertApproval,
+  type Client,
+  type InsertClient,
   type Invoice,
   type InsertInvoice,
   type Document,
@@ -50,11 +50,12 @@ export interface IStorage {
   updateBudget(id: string, budget: Partial<InsertBudget>): Promise<Budget>;
   deleteBudget(id: string): Promise<void>;
   
-  // ========== Approval Operations ==========
-  getApprovals(): Promise<Approval[]>;
-  getApproval(id: string): Promise<Approval | undefined>;
-  createApproval(approval: InsertApproval): Promise<Approval>;
-  updateApproval(id: string, approval: Partial<InsertApproval>): Promise<Approval>;
+  // ========== Client Operations ==========
+  getClients(): Promise<Client[]>;
+  getClient(id: string): Promise<Client | undefined>;
+  createClient(client: InsertClient): Promise<Client>;
+  updateClient(id: string, client: Partial<InsertClient>): Promise<Client>;
+  deleteClient(id: string): Promise<void>;
   
   // ========== Invoice Operations ==========
   getInvoices(): Promise<Invoice[]>;
@@ -135,29 +136,33 @@ export class DatabaseStorage implements IStorage {
     await db.delete(budgets).where(eq(budgets.id, id));
   }
   
-  // ========== Approval Operations ==========
+  // ========== Client Operations ==========
   
-  async getApprovals(): Promise<Approval[]> {
-    return await db.select().from(approvals).orderBy(desc(approvals.createdAt));
+  async getClients(): Promise<Client[]> {
+    return await db.select().from(clients).orderBy(desc(clients.createdAt));
   }
   
-  async getApproval(id: string): Promise<Approval | undefined> {
-    const [approval] = await db.select().from(approvals).where(eq(approvals.id, id));
-    return approval;
+  async getClient(id: string): Promise<Client | undefined> {
+    const [client] = await db.select().from(clients).where(eq(clients.id, id));
+    return client;
   }
   
-  async createApproval(approvalData: InsertApproval): Promise<Approval> {
-    const [approval] = await db.insert(approvals).values(approvalData).returning();
-    return approval;
+  async createClient(clientData: InsertClient): Promise<Client> {
+    const [client] = await db.insert(clients).values(clientData).returning();
+    return client;
   }
   
-  async updateApproval(id: string, approvalData: Partial<InsertApproval>): Promise<Approval> {
-    const [approval] = await db
-      .update(approvals)
-      .set({ ...approvalData, updatedAt: new Date() })
-      .where(eq(approvals.id, id))
+  async updateClient(id: string, clientData: Partial<InsertClient>): Promise<Client> {
+    const [client] = await db
+      .update(clients)
+      .set({ ...clientData, updatedAt: new Date() })
+      .where(eq(clients.id, id))
       .returning();
-    return approval;
+    return client;
+  }
+  
+  async deleteClient(id: string): Promise<void> {
+    await db.delete(clients).where(eq(clients.id, id));
   }
   
   // ========== Invoice Operations ==========
