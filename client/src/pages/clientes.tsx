@@ -75,19 +75,19 @@ export default function Clientes() {
   const watchedCnpj = form.watch("cnpj") || "";
   const { clientData, isLoading: loadingLookup, isNotFound } = useClientLookup(watchedCnpj);
 
-  // Autopreencher campos quando dados são encontrados no Google Sheets
+  // Autopreencher campos quando dados são encontrados no banco de dados
   useEffect(() => {
     if (clientData) {
-      form.setValue("name", clientData.razaoSocial);
-      form.setValue("address", clientData.endereco);
-      form.setValue("city", clientData.cidade);
-      form.setValue("state", clientData.uf);
-      form.setValue("zip", clientData.cep);
+      form.setValue("name", clientData.name);
+      form.setValue("address", clientData.address);
+      form.setValue("city", clientData.city);
+      form.setValue("state", clientData.state);
+      form.setValue("zip", clientData.zip);
       form.setValue("email", clientData.email);
       
       toast({
         title: "Cliente encontrado!",
-        description: `Dados de ${clientData.razaoSocial} preenchidos automaticamente.`,
+        description: `Dados de ${clientData.name} preenchidos automaticamente.`,
       });
     }
   }, [clientData, form, toast]);
@@ -98,6 +98,7 @@ export default function Clientes() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/clients/lookup-by-cnpj'] });
       toast({
         title: "Sucesso!",
         description: "Cliente cadastrado com sucesso.",
@@ -119,6 +120,7 @@ export default function Clientes() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/clients/lookup-by-cnpj'] });
       toast({
         title: "Sucesso!",
         description: "Cliente atualizado com sucesso.",

@@ -171,6 +171,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Busca cliente por CNPJ no PostgreSQL
+  app.get("/api/clients/lookup-by-cnpj", isAuthenticated, async (req, res) => {
+    try {
+      const { cnpj } = req.query;
+      
+      if (!cnpj || typeof cnpj !== 'string') {
+        return res.status(400).json({ 
+          success: false,
+          message: "CNPJ é obrigatório" 
+        });
+      }
+
+      // Validação de formato: deve ter 14 dígitos após normalização
+      const normalizedCnpj = cnpj.replace(/\D/g, '');
+      if (normalizedCnpj.length !== 14) {
+        return res.status(400).json({ 
+          success: false,
+          message: "CNPJ inválido. Deve conter 14 dígitos." 
+        });
+      }
+
+      const client = await storage.getClientByCNPJ(cnpj);
+      
+      if (!client) {
+        return res.json({ 
+          success: true,
+          data: null
+        });
+      }
+      
+      // Retorna apenas os campos necessários (exclui telefone, celular, id, timestamps)
+      res.json({
+        success: true,
+        data: {
+          cnpj: client.cnpj,
+          name: client.name,
+          email: client.email || "",
+          address: client.address,
+          city: client.city,
+          state: client.state,
+          zip: client.zip
+        }
+      });
+    } catch (error: any) {
+      console.error("Error fetching client by CNPJ:", error);
+      res.status(500).json({ 
+        success: false,
+        message: error.message || "Erro ao consultar dados do cliente" 
+      });
+    }
+  });
+
   // Busca cliente por ID
   app.get("/api/clients/:id", isAuthenticated, async (req, res) => {
     try {
@@ -195,7 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const client = await storage.createClient(clientData);
       res.status(201).json(client);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating client:", error);
       res.status(400).json({ 
         message: "Failed to create client",

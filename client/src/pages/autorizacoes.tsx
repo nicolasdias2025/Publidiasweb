@@ -78,16 +78,16 @@ export default function Autorizacoes() {
   // Autopreencher dados do cliente
   useEffect(() => {
     if (clientData) {
-      form.setValue("clientName", clientData.razaoSocial);
-      form.setValue("clientAddress", clientData.endereco);
-      form.setValue("clientCity", clientData.cidade);
-      form.setValue("clientState", clientData.uf);
-      form.setValue("clientZip", clientData.cep);
+      form.setValue("clientName", clientData.name);
+      form.setValue("clientAddress", clientData.address);
+      form.setValue("clientCity", clientData.city);
+      form.setValue("clientState", clientData.state);
+      form.setValue("clientZip", clientData.zip);
       form.setValue("clientEmail", clientData.email);
       
       toast({
         title: "Cliente encontrado!",
-        description: `Dados de ${clientData.razaoSocial} preenchidos automaticamente.`,
+        description: `Dados de ${clientData.name} preenchidos automaticamente.`,
       });
     }
   }, [clientData, form, toast]);

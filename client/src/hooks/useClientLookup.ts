@@ -1,6 +1,6 @@
 /**
  * Hook para busca de cliente por CNPJ com debounce
- * Integração com Google Sheets via backend
+ * Busca no PostgreSQL via backend
  */
 
 import { useState, useEffect } from 'react';
@@ -8,12 +8,18 @@ import { useQuery } from '@tanstack/react-query';
 
 interface ClientData {
   cnpj: string;
-  razaoSocial: string;
-  endereco: string;
-  cidade: string;
-  cep: string;
-  uf: string;
+  name: string;
+  address: string;
+  city: string;
+  zip: string;
+  state: string;
   email: string;
+}
+
+interface LookupResponse {
+  success: boolean;
+  data: ClientData | null;
+  message?: string;
 }
 
 export function useClientLookup(cnpj: string) {
@@ -33,15 +39,15 @@ export function useClientLookup(cnpj: string) {
     return () => clearTimeout(timer);
   }, [cnpj]);
 
-  const { data, isLoading, error, isError } = useQuery<ClientData>({
-    queryKey: ['/api/clients/lookup', debouncedCnpj],
+  const { data, isLoading, error, isError } = useQuery<LookupResponse>({
+    queryKey: ['/api/clients/lookup-by-cnpj', debouncedCnpj],
     queryFn: async () => {
-      const response = await fetch(`/api/clients/lookup?cnpj=${debouncedCnpj}`, {
+      const response = await fetch(`/api/clients/lookup-by-cnpj?cnpj=${debouncedCnpj}`, {
         credentials: 'include',
       });
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Erro ao buscar cliente' }));
+        const errorData = await response.json().catch(() => ({ success: false, message: 'Erro ao buscar cliente' }));
         throw { status: response.status, message: errorData.message };
       }
       
@@ -49,14 +55,14 @@ export function useClientLookup(cnpj: string) {
     },
     enabled: debouncedCnpj.length === 14,
     retry: false,
-    staleTime: Infinity,
+    staleTime: 60000,
   });
 
   return {
-    clientData: data,
+    clientData: data?.data || null,
     isLoading,
     isError,
     error,
-    isNotFound: isError && (error as any)?.status === 404,
+    isNotFound: data?.success && !data?.data,
   };
 }

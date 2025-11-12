@@ -32,7 +32,7 @@ import {
   type InsertLead,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 /**
  * Interface de Storage
@@ -53,6 +53,7 @@ export interface IStorage {
   // ========== Client Operations ==========
   getClients(): Promise<Client[]>;
   getClient(id: string): Promise<Client | undefined>;
+  getClientByCNPJ(cnpj: string): Promise<Client | null>;
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: string, client: Partial<InsertClient>): Promise<Client>;
   deleteClient(id: string): Promise<void>;
@@ -145,6 +146,17 @@ export class DatabaseStorage implements IStorage {
   async getClient(id: string): Promise<Client | undefined> {
     const [client] = await db.select().from(clients).where(eq(clients.id, id));
     return client;
+  }
+  
+  async getClientByCNPJ(cnpj: string): Promise<Client | null> {
+    const normalizedCNPJ = cnpj.replace(/[^\d]/g, '');
+    const results = await db
+      .select()
+      .from(clients)
+      .where(
+        sql`REGEXP_REPLACE(${clients.cnpj}, '[^0-9]', '', 'g') = ${normalizedCNPJ}`
+      );
+    return results[0] || null;
   }
   
   async createClient(clientData: InsertClient): Promise<Client> {
