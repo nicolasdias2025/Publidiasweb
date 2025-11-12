@@ -40,6 +40,8 @@ const clientFormSchema = z.object({
   state: z.string().length(2, "UF deve ter 2 caracteres"),
   zip: z.string().min(8, "CEP deve ter 8 dígitos"),
   email: z.string().email("E-mail inválido").optional().or(z.literal('')),
+  telefone: z.string().optional(),
+  celular: z.string().optional(),
 });
 
 type ClientFormData = z.infer<typeof clientFormSchema>;
@@ -65,6 +67,8 @@ export default function Clientes() {
       state: "",
       zip: "",
       email: "",
+      telefone: "",
+      celular: "",
     },
   });
 
@@ -175,6 +179,8 @@ export default function Clientes() {
       state: client.state,
       zip: client.zip,
       email: client.email || "",
+      telefone: client.telefone || "",
+      celular: client.celular || "",
     });
     setIsNewDialogOpen(true);
   };
@@ -310,7 +316,7 @@ export default function Clientes() {
             <DialogDescription>
               {editingClient 
                 ? "Atualize os dados do cliente." 
-                : "Preencha os dados do cliente. Ao digitar o CNPJ, os dados serão preenchidos automaticamente se disponíveis na planilha."}
+                : "Preencha os dados do cliente."}
             </DialogDescription>
           </DialogHeader>
 
@@ -426,6 +432,36 @@ export default function Clientes() {
                       <FormLabel>E-mail</FormLabel>
                       <FormControl>
                         <Input type="email" placeholder="contato@empresa.com" {...field} data-testid="input-email" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="telefone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="(00) 0000-0000" {...field} data-testid="input-telefone" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="celular"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Celular</FormLabel>
+                      <FormControl>
+                        <Input placeholder="(00) 00000-0000" {...field} data-testid="input-celular" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

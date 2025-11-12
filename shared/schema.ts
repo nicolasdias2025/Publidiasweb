@@ -160,6 +160,8 @@ export const clients = pgTable("clients", {
   state: varchar("state", { length: 2 }).notNull(),
   zip: varchar("zip", { length: 10 }).notNull(),
   email: varchar("email"),
+  telefone: varchar("telefone", { length: 20 }),
+  celular: varchar("celular", { length: 20 }),
   
   // Metadados
   createdBy: varchar("created_by").notNull().references(() => users.id),
