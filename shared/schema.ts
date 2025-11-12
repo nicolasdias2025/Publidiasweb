@@ -80,32 +80,34 @@ export const budgets = pgTable("budgets", {
   clientName: text("client_name").notNull(),
   clientEmail: varchar("client_email").notNull(),
   
-  // Formato (multiplicador para cálculo)
-  format: decimal("format", { precision: 10, scale: 2 }).notNull(),
-  
   // Linha 1
   line1Jornal: text("line1_jornal"),
   line1ValorCmCol: decimal("line1_valor_cm_col", { precision: 10, scale: 2 }),
+  line1Formato: decimal("line1_formato", { precision: 10, scale: 2 }),
   line1IncluirTotal: boolean("line1_incluir_total").default(false),
   
   // Linha 2
   line2Jornal: text("line2_jornal"),
   line2ValorCmCol: decimal("line2_valor_cm_col", { precision: 10, scale: 2 }),
+  line2Formato: decimal("line2_formato", { precision: 10, scale: 2 }),
   line2IncluirTotal: boolean("line2_incluir_total").default(false),
   
   // Linha 3
   line3Jornal: text("line3_jornal"),
   line3ValorCmCol: decimal("line3_valor_cm_col", { precision: 10, scale: 2 }),
+  line3Formato: decimal("line3_formato", { precision: 10, scale: 2 }),
   line3IncluirTotal: boolean("line3_incluir_total").default(false),
   
   // Linha 4
   line4Jornal: text("line4_jornal"),
   line4ValorCmCol: decimal("line4_valor_cm_col", { precision: 10, scale: 2 }),
+  line4Formato: decimal("line4_formato", { precision: 10, scale: 2 }),
   line4IncluirTotal: boolean("line4_incluir_total").default(false),
   
   // Linha 5
   line5Jornal: text("line5_jornal"),
   line5ValorCmCol: decimal("line5_valor_cm_col", { precision: 10, scale: 2 }),
+  line5Formato: decimal("line5_formato", { precision: 10, scale: 2 }),
   line5IncluirTotal: boolean("line5_incluir_total").default(false),
   
   // Campos Finais
