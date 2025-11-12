@@ -41,6 +41,7 @@ import type { Budget } from "@shared/schema";
 interface BudgetLine {
   jornal: string;
   valorCmCol: string;
+  formato: string;
   incluirTotal: boolean;
 }
 
@@ -53,7 +54,6 @@ export default function Orcamentos() {
   // Estados do formulário
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
-  const [format, setFormat] = useState("");
   const [diagramacao, setDiagramacao] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [observations, setObservations] = useState("");
@@ -61,11 +61,11 @@ export default function Orcamentos() {
 
   // Estados das 5 linhas de publicação
   const [lines, setLines] = useState<BudgetLine[]>([
-    { jornal: "", valorCmCol: "", incluirTotal: false },
-    { jornal: "", valorCmCol: "", incluirTotal: false },
-    { jornal: "", valorCmCol: "", incluirTotal: false },
-    { jornal: "", valorCmCol: "", incluirTotal: false },
-    { jornal: "", valorCmCol: "", incluirTotal: false },
+    { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
+    { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
+    { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
+    { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
+    { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
   ]);
 
   const [valorTotal, setValorTotal] = useState("0.00");
@@ -79,15 +79,15 @@ export default function Orcamentos() {
    * Valor Total = Σ(valores_linhas_marcadas) + diagramação
    */
   useEffect(() => {
-    const formatoNum = parseFloat(format) || 0;
     const diagramacaoNum = parseFloat(diagramacao) || 0;
 
     let total = 0;
 
-    // Calcula soma das linhas marcadas
+    // Calcula soma das linhas marcadas (cada linha tem seu próprio formato)
     lines.forEach(line => {
-      if (line.incluirTotal && line.valorCmCol) {
+      if (line.incluirTotal && line.valorCmCol && line.formato) {
         const valorCmColNum = parseFloat(line.valorCmCol) || 0;
+        const formatoNum = parseFloat(line.formato) || 0;
         total += formatoNum * valorCmColNum;
       }
     });
@@ -96,7 +96,7 @@ export default function Orcamentos() {
     total += diagramacaoNum;
 
     setValorTotal(total.toFixed(2));
-  }, [format, diagramacao, lines]);
+  }, [diagramacao, lines]);
 
   // Busca orçamentos do backend
   const { data: budgets = [], isLoading } = useQuery<Budget[]>({
@@ -173,17 +173,16 @@ export default function Orcamentos() {
   const resetForm = () => {
     setClientName("");
     setClientEmail("");
-    setFormat("");
     setDiagramacao("");
     setDate(new Date().toISOString().split('T')[0]);
     setObservations("");
     setApproved(false);
     setLines([
-      { jornal: "", valorCmCol: "", incluirTotal: false },
-      { jornal: "", valorCmCol: "", incluirTotal: false },
-      { jornal: "", valorCmCol: "", incluirTotal: false },
-      { jornal: "", valorCmCol: "", incluirTotal: false },
-      { jornal: "", valorCmCol: "", incluirTotal: false },
+      { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
+      { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
+      { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
+      { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
+      { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
     ]);
   };
 
@@ -236,26 +235,30 @@ export default function Orcamentos() {
     const budgetData = {
       clientName,
       clientEmail,
-      format: format || "0",
       
       line1Jornal: lines[0].jornal || null,
       line1ValorCmCol: lines[0].valorCmCol || "0",
+      line1Formato: lines[0].formato || "0",
       line1IncluirTotal: lines[0].incluirTotal,
       
       line2Jornal: lines[1].jornal || null,
       line2ValorCmCol: lines[1].valorCmCol || "0",
+      line2Formato: lines[1].formato || "0",
       line2IncluirTotal: lines[1].incluirTotal,
       
       line3Jornal: lines[2].jornal || null,
       line3ValorCmCol: lines[2].valorCmCol || "0",
+      line3Formato: lines[2].formato || "0",
       line3IncluirTotal: lines[2].incluirTotal,
       
       line4Jornal: lines[3].jornal || null,
       line4ValorCmCol: lines[3].valorCmCol || "0",
+      line4Formato: lines[3].formato || "0",
       line4IncluirTotal: lines[3].incluirTotal,
       
       line5Jornal: lines[4].jornal || null,
       line5ValorCmCol: lines[4].valorCmCol || "0",
+      line5Formato: lines[4].formato || "0",
       line5IncluirTotal: lines[4].incluirTotal,
       
       valorTotal,
@@ -346,23 +349,6 @@ export default function Orcamentos() {
                 </div>
               </div>
 
-              {/* Formato (multiplicador) */}
-              <div className="grid gap-2">
-                <Label htmlFor="formato">Formato (multiplicador)</Label>
-                <Input 
-                  id="formato" 
-                  type="number"
-                  step="0.01"
-                  placeholder="1.0" 
-                  value={format}
-                  onChange={(e) => setFormat(e.target.value)}
-                  data-testid="input-formato" 
-                />
-                <p className="text-xs text-muted-foreground">
-                  Este valor será multiplicado pelo "Valor cm x col./linha" de cada linha marcada
-                </p>
-              </div>
-
               {/* Linhas de Publicação */}
               <div className="grid gap-4">
                 <h3 className="text-sm font-semibold border-b pb-2">Linhas de Publicação</h3>
@@ -390,7 +376,7 @@ export default function Orcamentos() {
                             Linha {index + 1} {line.incluirTotal && "(✓ Incluída no total)"}
                           </Label>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-3 gap-4">
                           <div className="grid gap-2">
                             <Label htmlFor={`line-${index}-jornal`}>
                               Jornal (ex: Diário Oficial da União)
@@ -415,6 +401,20 @@ export default function Orcamentos() {
                               value={line.valorCmCol}
                               onChange={(e) => handleLineChange(index, 'valorCmCol', e.target.value)}
                               data-testid={`input-valor-${index + 1}`}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor={`line-${index}-formato`}>
+                              Formato
+                            </Label>
+                            <Input
+                              id={`line-${index}-formato`}
+                              type="number"
+                              step="0.01"
+                              placeholder="0.00"
+                              value={line.formato}
+                              onChange={(e) => handleLineChange(index, 'formato', e.target.value)}
+                              data-testid={`input-formato-${index + 1}`}
                             />
                           </div>
                         </div>
@@ -451,7 +451,7 @@ export default function Orcamentos() {
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Cálculo: Σ(Formato × Valor cm x col.) das linhas marcadas + Diagramação
+                      Cálculo: Σ(Formato × Valor cm x col./linha) de cada linha marcada + Diagramação
                     </p>
                   </div>
                 </CardContent>
