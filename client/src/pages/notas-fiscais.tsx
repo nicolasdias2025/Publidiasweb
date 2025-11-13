@@ -278,10 +278,18 @@ export default function NotasFiscais() {
   };
 
   const handleSubmit = (data: InvoiceFormData) => {
+    // Transforma string vazia em null para campos opcionais de data
+    const cleanedData = {
+      ...data,
+      paymentDate: data.paymentDate === "" ? null : data.paymentDate,
+      clientEmail: data.clientEmail === "" ? null : data.clientEmail,
+      comments: data.comments === "" ? null : data.comments,
+    };
+    
     if (editingInvoice) {
-      updateMutation.mutate({ id: editingInvoice.id, data });
+      updateMutation.mutate({ id: editingInvoice.id, data: cleanedData as any });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(cleanedData as any);
     }
   };
 
