@@ -195,6 +195,20 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateInvoice(id: string, invoiceData: Partial<InsertInvoice>): Promise<Invoice> {
+    // Verifica duplicata de invoiceNumber se estiver sendo atualizado
+    if (invoiceData.invoiceNumber) {
+      const [existing] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.invoiceNumber, invoiceData.invoiceNumber))
+        .limit(1);
+      
+      // Se encontrou outro registro com o mesmo invoiceNumber (que não seja o atual)
+      if (existing && existing.id !== id) {
+        throw new Error(`Nota fiscal com número ${invoiceData.invoiceNumber} já existe`);
+      }
+    }
+    
     const [invoice] = await db
       .update(invoices)
       .set({ ...invoiceData, updatedAt: new Date() })

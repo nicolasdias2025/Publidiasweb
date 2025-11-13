@@ -317,6 +317,56 @@ export const insertInvoiceSchema = createInsertSchema(invoices)
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type Invoice = typeof invoices.$inferSelect;
 
+// Schema para atualizações (PATCH) - todos os campos opcionais com validações condicionais
+export const updateInvoiceSchema = z.object({
+  invoiceNumber: z.string().min(1, "Número da nota fiscal é obrigatório").optional(),
+  cnpj: z.string().regex(/^\d{14}$|^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, "CNPJ inválido").optional(),
+  clientName: z.string().min(1, "Razão social é obrigatória").optional(),
+  clientEmail: z.string().email("E-mail inválido").optional().or(z.literal("")).optional(),
+  serviceType: z.enum(["DOU", "DOE", "Diagramação", "Comissão", "Outros"], {
+    errorMap: () => ({ message: "Tipo de serviço inválido" })
+  }).optional(),
+  value: z.string().refine((val) => parseFloat(val) > 0, "Valor deve ser maior que zero").optional(),
+  emissionDate: z.coerce.date().optional(),
+  dueDate: z.coerce.date().optional(),
+  paymentDate: z.coerce.date().optional().nullable(),
+  status: z.enum(["pending", "overdue", "paid", "replaced"]).optional(),
+  comments: z.string().max(500, "Comentários não podem exceder 500 caracteres").optional().or(z.literal("")).optional(),
+}).superRefine((data, ctx) => {
+  // Valida dueDate >= emissionDate apenas se ambos estiverem presentes
+  if (data.dueDate !== undefined && data.emissionDate !== undefined) {
+    if (new Date(data.dueDate) < new Date(data.emissionDate)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Data de vencimento deve ser maior ou igual à data de emissão",
+        path: ["dueDate"],
+      });
+    }
+  }
+  
+  // Valida paymentDate >= emissionDate apenas se ambos estiverem presentes
+  if (data.paymentDate !== undefined && data.paymentDate !== null && data.emissionDate !== undefined) {
+    if (new Date(data.paymentDate) < new Date(data.emissionDate)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Data de pagamento deve ser maior ou igual à data de emissão",
+        path: ["paymentDate"],
+      });
+    }
+  }
+  
+  // Valida que status="paid" requer paymentDate no mesmo payload
+  if (data.status === "paid" && (!data.paymentDate || data.paymentDate === null)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Data de pagamento é obrigatória para notas fiscais pagas",
+      path: ["paymentDate"],
+    });
+  }
+});
+
+export type UpdateInvoice = z.infer<typeof updateInvoiceSchema>;
+
 // =============================================================================
 // MÓDULO: GESTÃO ADMINISTRATIVA
 // =============================================================================

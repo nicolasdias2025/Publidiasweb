@@ -17,6 +17,7 @@ import {
   insertBudgetSchema,
   insertClientSchema,
   insertInvoiceSchema,
+  updateInvoiceSchema,
   insertDocumentSchema,
   insertProcessSchema,
   insertCampaignSchema,
@@ -342,8 +343,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("[PATCH /api/invoices/:id] Received data:", JSON.stringify(req.body, null, 2));
       
-      // Validação parcial dos dados
-      const invoice = await storage.updateInvoice(req.params.id, req.body);
+      // Busca invoice atual para merge com dados atualizados
+      const currentInvoice = await storage.getInvoice(req.params.id);
+      if (!currentInvoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      
+      // Valida dados parciais usando updateInvoiceSchema
+      const updateData = updateInvoiceSchema.parse(req.body);
+      console.log("[PATCH /api/invoices/:id] Validated partial data:", JSON.stringify(updateData, null, 2));
+      
+      // Merge dados atuais com dados atualizados para validação completa
+      const mergedData = {
+        invoiceNumber: updateData.invoiceNumber ?? currentInvoice.invoiceNumber,
+        cnpj: updateData.cnpj ?? currentInvoice.cnpj,
+        clientName: updateData.clientName ?? currentInvoice.clientName,
+        clientEmail: updateData.clientEmail ?? currentInvoice.clientEmail,
+        serviceType: updateData.serviceType ?? currentInvoice.serviceType,
+        value: updateData.value ?? currentInvoice.value,
+        emissionDate: updateData.emissionDate ?? currentInvoice.emissionDate,
+        dueDate: updateData.dueDate ?? currentInvoice.dueDate,
+        paymentDate: updateData.paymentDate !== undefined ? updateData.paymentDate : currentInvoice.paymentDate,
+        status: updateData.status ?? currentInvoice.status,
+        comments: updateData.comments !== undefined ? updateData.comments : currentInvoice.comments,
+        createdBy: currentInvoice.createdBy,
+      };
+      
+      // Valida merged data com insertInvoiceSchema para garantir todas as regras
+      insertInvoiceSchema.parse(mergedData);
+      
+      const invoice = await storage.updateInvoice(req.params.id, updateData);
       res.json(invoice);
     } catch (error: any) {
       console.error("Error updating invoice:", error);
@@ -351,6 +380,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ 
           message: "Validation error", 
           errors: error.errors 
+        });
+      }
+      if (error.message.includes("duplicate") || error.message.includes("já existe")) {
+        return res.status(409).json({ 
+          message: "Conflict", 
+          error: error.message 
         });
       }
       res.status(400).json({ 
