@@ -189,35 +189,130 @@ export type Client = typeof clients.$inferSelect;
 // MÓDULO: NOTAS FISCAIS
 // =============================================================================
 
+/**
+ * Tabela de Notas Fiscais
+ * 
+ * Gerenciamento completo de notas fiscais com:
+ * - Lookup automático de clientes por CNPJ
+ * - Validação de datas e status
+ * - Status com cores personalizadas
+ * - Filtros avançados
+ * 
+ * Status disponíveis:
+ * - pending: Pendente Recebimento (#F59E0B - Amarelo)
+ * - overdue: Vencida (#EF4444 - Vermelho)
+ * - paid: Paga (#10B981 - Verde)
+ * - replaced: Substituída (#9CA3AF - Cinza)
+ * 
+ * Tipos de Serviço:
+ * - DOU: Diário Oficial da União
+ * - DOE: Diário Oficial do Estado
+ * - Diagramação
+ * - Comissão
+ * - Outros
+ * 
+ * Regras de negócio:
+ * - invoiceNumber deve ser único
+ * - emissionDate não pode ser futura
+ * - dueDate >= emissionDate
+ * - paymentDate obrigatória se status='paid'
+ * - paymentDate >= emissionDate (se informada)
+ */
 export const invoices = pgTable("invoices", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Número da Nota Fiscal (único)
   invoiceNumber: text("invoice_number").notNull().unique(),
+  
+  // Dados do Cliente (com lookup por CNPJ)
+  cnpj: varchar("cnpj", { length: 18 }).notNull(),
   clientName: text("client_name").notNull(),
-  clientDocument: text("client_document").notNull(),
-  serviceType: text("service_type").notNull(),
-  serviceDescription: text("service_description").notNull(),
+  clientEmail: varchar("client_email"),
+  
+  // Tipo de Serviço (DOU, DOE, Diagramação, Comissão, Outros)
+  serviceType: varchar("service_type", { length: 50 }).notNull(),
+  
+  // Valor (positivo, formatado em BRL)
   value: decimal("value", { precision: 12, scale: 2 }).notNull(),
-  taxValue: decimal("tax_value", { precision: 12, scale: 2 }).notNull(),
-  status: varchar("status", { length: 20 }).notNull().default("draft"),
-  issuedBy: varchar("issued_by").notNull().references(() => users.id),
-  issuedAt: timestamp("issued_at"),
+  
+  // Datas
+  emissionDate: timestamp("emission_date").notNull(),
+  dueDate: timestamp("due_date").notNull(),
+  paymentDate: timestamp("payment_date"),
+  
+  // Status (pending, overdue, paid, replaced)
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+  
+  // Comentários (opcional, max 500 chars)
+  comments: text("comments"),
+  
+  // Metadados
+  createdBy: varchar("created_by").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const invoicesRelations = relations(invoices, ({ one }) => ({
-  issuer: one(users, {
-    fields: [invoices.issuedBy],
+  creator: one(users, {
+    fields: [invoices.createdBy],
     references: [users.id],
   }),
 }));
 
-export const insertInvoiceSchema = createInsertSchema(invoices).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  issuedAt: true,
-});
+// Schema de validação com regras de negócio
+export const insertInvoiceSchema = createInsertSchema(invoices)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    invoiceNumber: z.string().min(1, "Número da nota fiscal é obrigatório"),
+    cnpj: z.string().regex(/^\d{14}$|^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, "CNPJ inválido"),
+    clientName: z.string().min(1, "Razão social é obrigatória"),
+    clientEmail: z.string().email("E-mail inválido").optional().or(z.literal("")),
+    serviceType: z.enum(["DOU", "DOE", "Diagramação", "Comissão", "Outros"], {
+      errorMap: () => ({ message: "Tipo de serviço inválido" })
+    }),
+    value: z.string().refine((val) => parseFloat(val) > 0, "Valor deve ser maior que zero"),
+    emissionDate: z.coerce.date(),
+    dueDate: z.coerce.date(),
+    paymentDate: z.coerce.date().optional().nullable(),
+    status: z.enum(["pending", "overdue", "paid", "replaced"]).default("pending"),
+    comments: z.string().max(500, "Comentários não podem exceder 500 caracteres").optional().or(z.literal("")),
+  })
+  .refine(
+    (data) => {
+      if (!data.dueDate || !data.emissionDate) return true;
+      return new Date(data.dueDate) >= new Date(data.emissionDate);
+    },
+    {
+      message: "Data de vencimento deve ser maior ou igual à data de emissão",
+      path: ["dueDate"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (!data.paymentDate || !data.emissionDate) return true;
+      return new Date(data.paymentDate) >= new Date(data.emissionDate);
+    },
+    {
+      message: "Data de pagamento deve ser maior ou igual à data de emissão",
+      path: ["paymentDate"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.status === "paid") {
+        return !!data.paymentDate;
+      }
+      return true;
+    },
+    {
+      message: "Data de pagamento é obrigatória para notas fiscais pagas",
+      path: ["paymentDate"],
+    }
+  );
 
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type Invoice = typeof invoices.$inferSelect;
