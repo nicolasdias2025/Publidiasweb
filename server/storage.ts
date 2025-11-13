@@ -63,6 +63,7 @@ export interface IStorage {
   getInvoice(id: string): Promise<Invoice | undefined>;
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   updateInvoice(id: string, invoice: Partial<InsertInvoice>): Promise<Invoice>;
+  deleteInvoice(id: string): Promise<void>;
   
   // ========== Document Operations ==========
   getDocuments(): Promise<Document[]>;
@@ -200,6 +201,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(invoices.id, id))
       .returning();
     return invoice;
+  }
+  
+  async deleteInvoice(id: string): Promise<void> {
+    await db.delete(invoices).where(eq(invoices.id, id));
   }
   
   // ========== Document Operations ==========
