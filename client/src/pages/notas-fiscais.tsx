@@ -163,7 +163,6 @@ export default function NotasFiscais() {
   useEffect(() => {
     if (clientData) {
       form.setValue("clientName", clientData.name);
-      form.setValue("clientEmail", clientData.email || "");
       toast({
         title: "Cliente encontrado!",
         description: `Dados de ${clientData.name} preenchidos automaticamente.`,
