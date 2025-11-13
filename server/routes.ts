@@ -280,26 +280,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ========== Invoice Routes ==========
   
+  // Lista todas as notas fiscais
   app.get("/api/invoices", isAuthenticated, async (req, res) => {
     try {
       const invoices = await storage.getInvoices();
       res.json(invoices);
     } catch (error) {
+      console.error("Error fetching invoices:", error);
       res.status(500).json({ message: "Failed to fetch invoices" });
     }
   });
 
+  // Busca nota fiscal por ID
+  app.get("/api/invoices/:id", isAuthenticated, async (req, res) => {
+    try {
+      const invoice = await storage.getInvoice(req.params.id);
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      res.status(500).json({ message: "Failed to fetch invoice" });
+    }
+  });
+
+  // Cria nova nota fiscal
   app.post("/api/invoices", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      
+      console.log("[POST /api/invoices] Received data:", JSON.stringify(req.body, null, 2));
+      
       const invoiceData = insertInvoiceSchema.parse({
         ...req.body,
-        issuedBy: userId,
+        createdBy: userId,
       });
+      
+      console.log("[POST /api/invoices] Parsed data:", JSON.stringify(invoiceData, null, 2));
+      
       const invoice = await storage.createInvoice(invoiceData);
       res.status(201).json(invoice);
+    } catch (error: any) {
+      console.error("Error creating invoice - Full error:", error);
+      if (error.name === "ZodError") {
+        console.error("Zod validation errors:", JSON.stringify(error.errors, null, 2));
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      res.status(400).json({ 
+        message: "Failed to create invoice", 
+        error: error.message || String(error)
+      });
+    }
+  });
+
+  // Atualiza nota fiscal
+  app.patch("/api/invoices/:id", isAuthenticated, async (req, res) => {
+    try {
+      console.log("[PATCH /api/invoices/:id] Received data:", JSON.stringify(req.body, null, 2));
+      
+      // Validação parcial dos dados
+      const invoice = await storage.updateInvoice(req.params.id, req.body);
+      res.json(invoice);
+    } catch (error: any) {
+      console.error("Error updating invoice:", error);
+      if (error.name === "ZodError") {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      res.status(400).json({ 
+        message: "Failed to update invoice",
+        error: error.message || String(error)
+      });
+    }
+  });
+
+  // Deleta nota fiscal
+  app.delete("/api/invoices/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteInvoice(req.params.id);
+      res.status(204).send();
     } catch (error) {
-      res.status(400).json({ message: "Failed to create invoice" });
+      console.error("Error deleting invoice:", error);
+      res.status(500).json({ message: "Failed to delete invoice" });
     }
   });
 
