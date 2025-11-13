@@ -270,7 +270,7 @@ export const insertInvoiceSchema = createInsertSchema(invoices)
     invoiceNumber: z.string().min(1, "Número da nota fiscal é obrigatório"),
     cnpj: z.string().regex(/^\d{14}$|^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, "CNPJ inválido"),
     clientName: z.string().min(1, "Razão social é obrigatória"),
-    clientEmail: z.string().email("E-mail inválido").optional().or(z.literal("")),
+    clientEmail: z.string().email("E-mail inválido").optional().nullable().or(z.literal("")),
     serviceType: z.enum(["DOU", "DOE", "Diagramação", "Comissão", "Outros"], {
       errorMap: () => ({ message: "Tipo de serviço inválido" })
     }),
@@ -279,7 +279,7 @@ export const insertInvoiceSchema = createInsertSchema(invoices)
     dueDate: z.coerce.date(),
     paymentDate: z.coerce.date().optional().nullable(),
     status: z.enum(["pending", "overdue", "paid", "replaced"]).default("pending"),
-    comments: z.string().max(500, "Comentários não podem exceder 500 caracteres").optional().or(z.literal("")),
+    comments: z.string().max(500, "Comentários não podem exceder 500 caracteres").optional().nullable().or(z.literal("")),
   })
   .refine(
     (data) => {
@@ -322,7 +322,7 @@ export const updateInvoiceSchema = z.object({
   invoiceNumber: z.string().min(1, "Número da nota fiscal é obrigatório").optional(),
   cnpj: z.string().regex(/^\d{14}$|^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, "CNPJ inválido").optional(),
   clientName: z.string().min(1, "Razão social é obrigatória").optional(),
-  clientEmail: z.string().email("E-mail inválido").optional().or(z.literal("")).optional(),
+  clientEmail: z.string().email("E-mail inválido").optional().nullable().or(z.literal("")).optional(),
   serviceType: z.enum(["DOU", "DOE", "Diagramação", "Comissão", "Outros"], {
     errorMap: () => ({ message: "Tipo de serviço inválido" })
   }).optional(),
@@ -331,7 +331,7 @@ export const updateInvoiceSchema = z.object({
   dueDate: z.coerce.date().optional(),
   paymentDate: z.coerce.date().optional().nullable(),
   status: z.enum(["pending", "overdue", "paid", "replaced"]).optional(),
-  comments: z.string().max(500, "Comentários não podem exceder 500 caracteres").optional().or(z.literal("")).optional(),
+  comments: z.string().max(500, "Comentários não podem exceder 500 caracteres").optional().nullable().or(z.literal("")).optional(),
 }).superRefine((data, ctx) => {
   // Valida dueDate >= emissionDate apenas se ambos estiverem presentes
   if (data.dueDate !== undefined && data.emissionDate !== undefined) {
