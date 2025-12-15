@@ -2,9 +2,10 @@
  * Landing Page - Sistema Corporativo
  * 
  * Página inicial para usuários não autenticados.
- * Apresenta o sistema e oferece login via Replit Auth.
+ * Apresenta o sistema e oferece login via autenticação local.
  */
 
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
@@ -17,6 +18,8 @@ import {
 } from "lucide-react";
 
 export default function Landing() {
+  const [, setLocation] = useLocation();
+
   const features = [
     {
       icon: FileText,
@@ -64,7 +67,7 @@ export default function Landing() {
           <div className="flex gap-4 justify-center">
             <Button 
               size="lg"
-              onClick={() => window.location.href = "/api/login"}
+              onClick={() => setLocation("/login")}
               data-testid="button-login"
             >
               Fazer Login
@@ -91,12 +94,12 @@ export default function Landing() {
               Pronto para começar?
             </h2>
             <p className="mb-6 text-primary-foreground/90">
-              Faça login com sua conta Replit para acessar o sistema completo
+              Faça login ou crie sua conta para acessar o sistema completo
             </p>
             <Button 
               variant="secondary"
               size="lg"
-              onClick={() => window.location.href = "/api/login"}
+              onClick={() => setLocation("/login")}
               data-testid="button-login-cta"
             >
               Acessar Sistema
@@ -107,7 +110,7 @@ export default function Landing() {
         <div className="mt-16 text-center text-sm text-muted-foreground">
           <p>
             Sistema desenvolvido para gestão corporativa completa • 
-            Autenticação segura via Replit Auth • 
+            Autenticação segura • 
             Compatível com UOL Host
           </p>
         </div>

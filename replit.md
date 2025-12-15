@@ -47,7 +47,7 @@ Preferred communication style: Simple, everyday language.
 - Node.js with Express.js REST API
 - TypeScript throughout for type safety
 - Drizzle ORM for database operations
-- OpenID Connect (OIDC) via Passport.js for authentication
+- Local username/password authentication with bcrypt
 
 **API Structure:**
 - RESTful endpoints following standard CRUD patterns:
@@ -61,11 +61,15 @@ Preferred communication style: Simple, everyday language.
 - Request/response logging middleware with duration tracking
 
 **Authentication System:**
-- Replit Auth via OpenID Connect (supports Google, GitHub, email/password)
+- Local authentication with username/password (replaces Replit OIDC)
+- Password hashing using bcrypt with configurable salt rounds
 - Session-based authentication using PostgreSQL session store
 - 7-day session TTL with secure, httpOnly cookies
-- User session management with automatic user upsert on login
-- Memoized OIDC configuration for performance
+- Auth routes in `server/localAuth.ts`:
+  - `POST /api/auth/register` - Create account (username, email, password)
+  - `POST /api/auth/login` - Login with username/password
+  - `POST /api/auth/logout` - Logout and destroy session
+  - `GET /api/auth/user` - Get current authenticated user
 
 **Data Layer:**
 - Storage abstraction layer (`server/storage.ts`) implementing `IStorage` interface
@@ -76,8 +80,8 @@ Preferred communication style: Simple, everyday language.
 ### Database Schema
 
 **Core Tables:**
-- `sessions` - Session storage (required for Replit Auth)
-- `users` - User accounts with email, name, profile image
+- `sessions` - Session storage for authentication
+- `users` - User accounts with username, email, passwordHash, profile info
 - `budgets` - Budget quotes for newspaper publications with line items
 - `approvals` - Approval workflows with type, requester, status
 - `invoices` - Invoice records with client, amounts, tax details

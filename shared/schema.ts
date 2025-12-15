@@ -44,11 +44,12 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// Tabela de usuários (obrigatória para Replit Auth)
-// Nota: email não é unique pois diferentes providers OIDC podem ter mesmo email
+// Tabela de usuários (autenticação local com username/password)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email"),
+  username: varchar("username", { length: 50 }).notNull().unique(),
+  email: varchar("email").notNull().unique(),
+  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -58,6 +59,33 @@ export const users = pgTable("users", {
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+// Schema para registro de novo usuário
+export const insertUserSchema = createInsertSchema(users)
+  .omit({
+    id: true,
+    passwordHash: true,
+    createdAt: true,
+    updatedAt: true,
+    firstName: true,
+    lastName: true,
+    profileImageUrl: true,
+  })
+  .extend({
+    username: z.string().min(3, "Usuário deve ter pelo menos 3 caracteres").max(50, "Usuário deve ter no máximo 50 caracteres"),
+    email: z.string().email("E-mail inválido"),
+    password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  });
+
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+// Schema para login
+export const loginSchema = z.object({
+  username: z.string().min(1, "Usuário é obrigatório"),
+  password: z.string().min(1, "Senha é obrigatória"),
+});
+
+export type LoginCredentials = z.infer<typeof loginSchema>;
 
 // =============================================================================
 // MÓDULO: ORÇAMENTOS (Publicações em Jornais Oficiais)

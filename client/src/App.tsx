@@ -23,25 +23,29 @@ import NotasFiscais from "@/pages/notas-fiscais";
 import GestaoAdministrativa from "@/pages/gestao-administrativa";
 import Marketing from "@/pages/marketing";
 import Landing from "@/pages/landing";
+import LoginPage from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
-  // Exibe landing page se não autenticado
+  // Exibe landing/login se não autenticado
   if (isLoading || !isAuthenticated) {
     return (
       <Switch>
         <Route path="/" component={Landing} />
+        <Route path="/login" component={LoginPage} />
         <Route component={Landing} />
       </Switch>
     );
   }
 
   // Rotas protegidas para usuários autenticados
+  // Se já autenticado e tentar acessar /login, redireciona para home
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/login" component={Dashboard} />
       <Route path="/orcamentos" component={Orcamentos} />
       <Route path="/clientes" component={Clientes} />
       <Route path="/autorizacoes" component={Autorizacoes} />

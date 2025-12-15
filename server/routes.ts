@@ -12,7 +12,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./localAuth";
 import { 
   insertBudgetSchema,
   insertClientSchema,
@@ -27,18 +27,6 @@ import {
 export async function registerRoutes(app: Express): Promise<Server> {
   // ========== Auth Setup ==========
   await setupAuth(app);
-
-  // ========== Auth Routes ==========
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
 
   // ========== Budget Routes ==========
   
@@ -70,7 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cria novo orçamento
   app.post("/api/budgets", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       // Log dados recebidos para debug
       console.log("[POST /api/budgets] Received data:", JSON.stringify(req.body, null, 2));
@@ -241,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cria novo cliente
   app.post("/api/clients", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const clientData = insertClientSchema.parse({
         ...req.body,
         createdBy: userId,
@@ -309,7 +297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cria nova nota fiscal
   app.post("/api/invoices", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       console.log("[POST /api/invoices] Received data:", JSON.stringify(req.body, null, 2));
       
@@ -419,7 +407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/documents", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const documentData = insertDocumentSchema.parse({
         ...req.body,
         uploadedBy: userId,
@@ -444,7 +432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/processes", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const processData = insertProcessSchema.parse({
         ...req.body,
         createdBy: userId,
@@ -469,7 +457,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/campaigns", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const campaignData = insertCampaignSchema.parse({
         ...req.body,
         createdBy: userId,
