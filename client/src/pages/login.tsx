@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,7 +7,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Building2, Loader2 } from "lucide-react";
@@ -92,12 +92,18 @@ export default function LoginPage() {
     },
   });
 
-  const onLoginSubmit = (data: LoginFormData) => {
-    loginMutation.mutate(data);
+  const onLoginSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    loginForm.handleSubmit((data) => {
+      loginMutation.mutate(data);
+    })();
   };
 
-  const onRegisterSubmit = (data: RegisterFormData) => {
-    registerMutation.mutate(data);
+  const onRegisterSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    registerForm.handleSubmit((data) => {
+      registerMutation.mutate(data);
+    })();
   };
 
   const toggleMode = () => {
@@ -127,141 +133,107 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           {isCreateAccount ? (
-            <Form {...registerForm}>
-              <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
-                <FormField
-                  control={registerForm.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Usuário</FormLabel>
-                      <FormControl>
-                        <Input 
-                          autoComplete="username"
-                          placeholder="Digite seu nome de usuário" 
-                          data-testid="input-register-username"
-                          value={field.value}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+            <form onSubmit={onRegisterSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="register-username">Usuário</Label>
+                <Input 
+                  id="register-username"
+                  autoComplete="username"
+                  placeholder="Digite seu nome de usuário" 
+                  data-testid="input-register-username"
+                  {...registerForm.register("username")}
                 />
-                <FormField
-                  control={registerForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>E-mail</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="email"
-                          autoComplete="email"
-                          placeholder="Digite seu e-mail" 
-                          data-testid="input-register-email"
-                          value={field.value}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                {registerForm.formState.errors.username && (
+                  <p className="text-sm font-medium text-destructive">
+                    {registerForm.formState.errors.username.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="register-email">E-mail</Label>
+                <Input 
+                  id="register-email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="Digite seu e-mail" 
+                  data-testid="input-register-email"
+                  {...registerForm.register("email")}
                 />
-                <FormField
-                  control={registerForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Senha</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="password"
-                          autoComplete="new-password"
-                          placeholder="Digite sua senha" 
-                          data-testid="input-register-password"
-                          value={field.value}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                {registerForm.formState.errors.email && (
+                  <p className="text-sm font-medium text-destructive">
+                    {registerForm.formState.errors.email.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="register-password">Senha</Label>
+                <Input 
+                  id="register-password"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Digite sua senha" 
+                  data-testid="input-register-password"
+                  {...registerForm.register("password")}
                 />
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={registerMutation.isPending}
-                  data-testid="button-register-submit"
-                >
-                  {registerMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Criar Conta
-                </Button>
-              </form>
-            </Form>
+                {registerForm.formState.errors.password && (
+                  <p className="text-sm font-medium text-destructive">
+                    {registerForm.formState.errors.password.message}
+                  </p>
+                )}
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={registerMutation.isPending}
+                data-testid="button-register-submit"
+              >
+                {registerMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Criar Conta
+              </Button>
+            </form>
           ) : (
-            <Form {...loginForm}>
-              <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
-                <FormField
-                  control={loginForm.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Usuário</FormLabel>
-                      <FormControl>
-                        <Input 
-                          autoComplete="username"
-                          placeholder="Digite seu nome de usuário" 
-                          data-testid="input-login-username"
-                          value={field.value}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+            <form onSubmit={onLoginSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="login-username">Usuário</Label>
+                <Input 
+                  id="login-username"
+                  autoComplete="username"
+                  placeholder="Digite seu nome de usuário" 
+                  data-testid="input-login-username"
+                  {...loginForm.register("username")}
                 />
-                <FormField
-                  control={loginForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Senha</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="password"
-                          autoComplete="current-password"
-                          placeholder="Digite sua senha" 
-                          data-testid="input-login-password"
-                          value={field.value}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                {loginForm.formState.errors.username && (
+                  <p className="text-sm font-medium text-destructive">
+                    {loginForm.formState.errors.username.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="login-password">Senha</Label>
+                <Input 
+                  id="login-password"
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="Digite sua senha" 
+                  data-testid="input-login-password"
+                  {...loginForm.register("password")}
                 />
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={loginMutation.isPending}
-                  data-testid="button-login-submit"
-                >
-                  {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Entrar
-                </Button>
-              </form>
-            </Form>
+                {loginForm.formState.errors.password && (
+                  <p className="text-sm font-medium text-destructive">
+                    {loginForm.formState.errors.password.message}
+                  </p>
+                )}
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={loginMutation.isPending}
+                data-testid="button-login-submit"
+              >
+                {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Entrar
+              </Button>
+            </form>
           )}
 
           <div className="mt-6 text-center">
