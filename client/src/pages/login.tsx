@@ -137,11 +137,13 @@ export default function LoginPage() {
                       <FormLabel>Usuário</FormLabel>
                       <FormControl>
                         <Input 
-                          id="register-username"
                           autoComplete="username"
                           placeholder="Digite seu nome de usuário" 
                           data-testid="input-register-username"
-                          {...field} 
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
                         />
                       </FormControl>
                       <FormMessage />
@@ -156,12 +158,14 @@ export default function LoginPage() {
                       <FormLabel>E-mail</FormLabel>
                       <FormControl>
                         <Input 
-                          id="register-email"
                           type="email"
                           autoComplete="email"
                           placeholder="Digite seu e-mail" 
                           data-testid="input-register-email"
-                          {...field} 
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
                         />
                       </FormControl>
                       <FormMessage />
@@ -176,12 +180,14 @@ export default function LoginPage() {
                       <FormLabel>Senha</FormLabel>
                       <FormControl>
                         <Input 
-                          id="register-password"
                           type="password"
                           autoComplete="new-password"
                           placeholder="Digite sua senha" 
                           data-testid="input-register-password"
-                          {...field} 
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
                         />
                       </FormControl>
                       <FormMessage />
@@ -210,11 +216,13 @@ export default function LoginPage() {
                       <FormLabel>Usuário</FormLabel>
                       <FormControl>
                         <Input 
-                          id="login-username"
                           autoComplete="username"
                           placeholder="Digite seu nome de usuário" 
                           data-testid="input-login-username"
-                          {...field} 
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
                         />
                       </FormControl>
                       <FormMessage />
@@ -229,12 +237,14 @@ export default function LoginPage() {
                       <FormLabel>Senha</FormLabel>
                       <FormControl>
                         <Input 
-                          id="login-password"
                           type="password"
                           autoComplete="current-password"
                           placeholder="Digite sua senha" 
                           data-testid="input-login-password"
-                          {...field} 
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
                         />
                       </FormControl>
                       <FormMessage />
