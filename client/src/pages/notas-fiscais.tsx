@@ -722,7 +722,7 @@ export default function NotasFiscais() {
                             <SelectValue placeholder="Selecione..." />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent position="popper" sideOffset={4}>
                           <SelectItem value="DOU">DOU</SelectItem>
                           <SelectItem value="DOE">DOE</SelectItem>
                           <SelectItem value="Diagramação">Diagramação</SelectItem>
@@ -824,7 +824,7 @@ export default function NotasFiscais() {
                           <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent position="popper" sideOffset={4}>
                         <SelectItem value="pending">Pendente Rec.</SelectItem>
                         <SelectItem value="overdue">Vencida</SelectItem>
                         <SelectItem value="paid">Paga</SelectItem>
