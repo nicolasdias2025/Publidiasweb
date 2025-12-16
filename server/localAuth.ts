@@ -66,13 +66,20 @@ export async function setupAuth(app: Express) {
         passwordHash,
       });
       
-      // Criar sessão
+      // Criar sessão e salvar explicitamente
       (req.session as any).userId = user.id;
       
-      res.status(201).json({
-        id: user.id,
-        username: user.username,
-        email: user.email,
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ message: "Erro ao criar sessão" });
+        }
+        
+        res.status(201).json({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+        });
       });
     } catch (error: any) {
       console.error("Register error:", error);
@@ -100,13 +107,20 @@ export async function setupAuth(app: Express) {
         return res.status(401).json({ message: "Usuário ou senha inválidos" });
       }
       
-      // Criar sessão
+      // Criar sessão e salvar explicitamente
       (req.session as any).userId = user.id;
       
-      res.json({
-        id: user.id,
-        username: user.username,
-        email: user.email,
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ message: "Erro ao criar sessão" });
+        }
+        
+        res.json({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+        });
       });
     } catch (error: any) {
       console.error("Login error:", error);
