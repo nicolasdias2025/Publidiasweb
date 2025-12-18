@@ -21,7 +21,11 @@ import {
   insertDocumentSchema,
   insertProcessSchema,
   insertCampaignSchema,
-  insertLeadSchema 
+  insertLeadSchema,
+  insertMarketingActivitySchema,
+  insertMarketingContentSchema,
+  insertContentCommentSchema,
+  insertMarketingMetricSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -487,6 +491,328 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(lead);
     } catch (error) {
       res.status(400).json({ message: "Failed to create lead" });
+    }
+  });
+
+  // ========== Marketing Activity Routes (Calendar) ==========
+  
+  app.get("/api/marketing/activities/:year/:month", isAuthenticated, async (req, res) => {
+    try {
+      const year = parseInt(req.params.year);
+      const month = parseInt(req.params.month);
+      const activities = await storage.getMarketingActivities(year, month);
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      res.status(500).json({ message: "Failed to fetch activities" });
+    }
+  });
+
+  app.get("/api/marketing/activities/:id", isAuthenticated, async (req, res) => {
+    try {
+      const activity = await storage.getMarketingActivity(req.params.id);
+      if (!activity) {
+        return res.status(404).json({ message: "Activity not found" });
+      }
+      res.json(activity);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch activity" });
+    }
+  });
+
+  app.post("/api/marketing/activities", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { date, ...rest } = req.body;
+      const activityData = insertMarketingActivitySchema.parse({
+        ...rest,
+        date: date ? new Date(date) : new Date(),
+        createdBy: userId,
+      });
+      const activity = await storage.createMarketingActivity(activityData);
+      res.status(201).json(activity);
+    } catch (error: any) {
+      console.error("Error creating activity:", error);
+      res.status(400).json({ message: error.message || "Failed to create activity" });
+    }
+  });
+
+  app.patch("/api/marketing/activities/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { date, ...rest } = req.body;
+      const updateData = {
+        ...rest,
+        ...(date && { date: new Date(date) }),
+      };
+      const activity = await storage.updateMarketingActivity(req.params.id, updateData);
+      res.json(activity);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update activity" });
+    }
+  });
+
+  app.delete("/api/marketing/activities/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteMarketingActivity(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete activity" });
+    }
+  });
+
+  // ========== Marketing Content Routes ==========
+  
+  app.get("/api/marketing/content", isAuthenticated, async (req, res) => {
+    try {
+      const filters = {
+        clientType: req.query.client_type as string,
+        contentType: req.query.content_type as string,
+        search: req.query.search as string,
+        tag: req.query.tag as string,
+      };
+      const contents = await storage.getMarketingContents(filters);
+      res.json(contents);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch contents" });
+    }
+  });
+
+  app.get("/api/marketing/content/:id", isAuthenticated, async (req, res) => {
+    try {
+      const content = await storage.getMarketingContent(req.params.id);
+      if (!content) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+      res.json(content);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch content" });
+    }
+  });
+
+  app.post("/api/marketing/content", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { tags, ...contentData } = req.body;
+      
+      const parsed = insertMarketingContentSchema.parse({
+        ...contentData,
+        createdBy: userId,
+      });
+      
+      const content = await storage.createMarketingContent(parsed);
+      
+      if (tags && tags.length > 0) {
+        await storage.setContentTags(content.id, tags);
+      }
+      
+      res.status(201).json(content);
+    } catch (error: any) {
+      console.error("Error creating content:", error);
+      res.status(400).json({ message: error.message || "Failed to create content" });
+    }
+  });
+
+  app.patch("/api/marketing/content/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { tags, changeDescription, ...contentData } = req.body;
+      const changedBy = req.user.username || req.user.email;
+      
+      const content = await storage.updateMarketingContent(
+        req.params.id, 
+        contentData, 
+        changeDescription,
+        changedBy
+      );
+      
+      if (tags !== undefined) {
+        await storage.setContentTags(content.id, tags);
+      }
+      
+      res.json(content);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || "Failed to update content" });
+    }
+  });
+
+  app.delete("/api/marketing/content/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteMarketingContent(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete content" });
+    }
+  });
+
+  // ========== Content Version Routes ==========
+  
+  app.get("/api/marketing/content/:id/versions", isAuthenticated, async (req, res) => {
+    try {
+      const versions = await storage.getContentVersions(req.params.id);
+      res.json(versions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch versions" });
+    }
+  });
+
+  app.post("/api/marketing/content/:id/restore/:version", isAuthenticated, async (req: any, res) => {
+    try {
+      const changedBy = req.user.username || req.user.email;
+      const content = await storage.restoreContentVersion(
+        req.params.id,
+        parseInt(req.params.version),
+        changedBy
+      );
+      res.json(content);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || "Failed to restore version" });
+    }
+  });
+
+  // ========== Content Comment Routes ==========
+  
+  app.get("/api/marketing/content/:id/comments", isAuthenticated, async (req, res) => {
+    try {
+      const comments = await storage.getContentComments(req.params.id);
+      res.json(comments);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/marketing/content/:id/comments", isAuthenticated, async (req: any, res) => {
+    try {
+      const commentedBy = req.user.username || req.user.email;
+      const commentData = insertContentCommentSchema.parse({
+        contentId: req.params.id,
+        comment: req.body.comment,
+        commentedBy,
+      });
+      const comment = await storage.createContentComment(commentData);
+      res.status(201).json(comment);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || "Failed to create comment" });
+    }
+  });
+
+  app.delete("/api/marketing/comments/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteContentComment(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+
+  // ========== Content Tag Routes ==========
+  
+  app.get("/api/marketing/tags", isAuthenticated, async (req, res) => {
+    try {
+      const tags = await storage.getAllTags();
+      res.json(tags);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch tags" });
+    }
+  });
+
+  app.get("/api/marketing/content/:id/tags", isAuthenticated, async (req, res) => {
+    try {
+      const tags = await storage.getContentTags(req.params.id);
+      res.json(tags);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch tags" });
+    }
+  });
+
+  // ========== Marketing Metrics Routes ==========
+  
+  app.get("/api/marketing/metrics", isAuthenticated, async (req, res) => {
+    try {
+      const filters: { dateFrom?: Date; dateTo?: Date; collaborator?: string; platform?: string } = {};
+      
+      if (req.query.date_from) {
+        filters.dateFrom = new Date(req.query.date_from as string);
+      }
+      if (req.query.date_to) {
+        filters.dateTo = new Date(req.query.date_to as string);
+      }
+      if (req.query.collaborator) {
+        filters.collaborator = req.query.collaborator as string;
+      }
+      if (req.query.platform) {
+        filters.platform = req.query.platform as string;
+      }
+      
+      const metrics = await storage.getMarketingMetrics(filters);
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching metrics:", error);
+      res.status(500).json({ message: "Failed to fetch metrics" });
+    }
+  });
+
+  app.get("/api/marketing/metrics/:id", isAuthenticated, async (req, res) => {
+    try {
+      const metric = await storage.getMarketingMetric(req.params.id);
+      if (!metric) {
+        return res.status(404).json({ message: "Metric not found" });
+      }
+      res.json(metric);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch metric" });
+    }
+  });
+
+  app.post("/api/marketing/metrics", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { date, openRate, activityId, ...rest } = req.body;
+      const metricData = insertMarketingMetricSchema.parse({
+        ...rest,
+        date: date ? new Date(date) : new Date(),
+        openRate: String(openRate || 0),
+        activityId: (activityId && activityId !== "manual" && activityId !== "") ? activityId : null,
+        createdBy: userId,
+      });
+      const metric = await storage.createMarketingMetric(metricData);
+      res.status(201).json(metric);
+    } catch (error: any) {
+      console.error("Error creating metric:", error);
+      res.status(400).json({ message: error.message || "Failed to create metric" });
+    }
+  });
+
+  app.patch("/api/marketing/metrics/:id", isAuthenticated, async (req, res) => {
+    try {
+      const metric = await storage.updateMarketingMetric(req.params.id, req.body);
+      res.json(metric);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update metric" });
+    }
+  });
+
+  app.delete("/api/marketing/metrics/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteMarketingMetric(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete metric" });
+    }
+  });
+
+  // Get all activities for dropdown (without month filter)
+  app.get("/api/marketing/all-activities", isAuthenticated, async (req, res) => {
+    try {
+      // Get activities from last 6 months
+      const now = new Date();
+      const activities = [];
+      for (let i = 0; i < 6; i++) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthActivities = await storage.getMarketingActivities(date.getFullYear(), date.getMonth() + 1);
+        activities.push(...monthActivities);
+      }
+      res.json(activities);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch activities" });
     }
   });
 

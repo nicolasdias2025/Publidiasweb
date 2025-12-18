@@ -513,3 +513,199 @@ export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
 export type Campaign = typeof campaigns.$inferSelect;
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type Lead = typeof leads.$inferSelect;
+
+// =============================================================================
+// MÓDULO: MARKETING - SISTEMA INTERATIVO (Calendário, Conteúdo, Métricas)
+// =============================================================================
+
+/**
+ * Tabela de Atividades de Marketing (Calendário)
+ * 
+ * Gerencia atividades de prospecção com visualização em calendário.
+ * Status: Pendente (amarelo), Execução (azul), Concluída (verde)
+ */
+export const marketingActivities = pgTable("marketing_activities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: timestamp("date").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  collaborator: text("collaborator").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("Pendente"),
+  color: varchar("color", { length: 20 }).default("#3B82F6"),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const marketingActivitiesRelations = relations(marketingActivities, ({ one }) => ({
+  creator: one(users, {
+    fields: [marketingActivities.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const insertMarketingActivitySchema = createInsertSchema(marketingActivities).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertMarketingActivity = z.infer<typeof insertMarketingActivitySchema>;
+export type MarketingActivity = typeof marketingActivities.$inferSelect;
+
+/**
+ * Tabela de Conteúdos de Marketing
+ * 
+ * Armazena textos, emails e landing pages por tipo de cliente.
+ * Suporta versionamento, comentários e tags.
+ */
+export const marketingContent = pgTable("marketing_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  contentType: varchar("content_type", { length: 50 }).notNull(),
+  clientType: varchar("client_type", { length: 100 }),
+  contentData: text("content_data").notNull(),
+  currentVersion: integer("current_version").notNull().default(1),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const marketingContentRelations = relations(marketingContent, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [marketingContent.createdBy],
+    references: [users.id],
+  }),
+  versions: many(contentVersions),
+  comments: many(contentComments),
+  tags: many(contentTags),
+}));
+
+export const insertMarketingContentSchema = createInsertSchema(marketingContent).omit({
+  id: true,
+  currentVersion: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertMarketingContent = z.infer<typeof insertMarketingContentSchema>;
+export type MarketingContent = typeof marketingContent.$inferSelect;
+
+/**
+ * Tabela de Versões de Conteúdo
+ */
+export const contentVersions = pgTable("content_versions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId: varchar("content_id").notNull().references(() => marketingContent.id, { onDelete: "cascade" }),
+  versionNumber: integer("version_number").notNull(),
+  contentData: text("content_data").notNull(),
+  changedBy: text("changed_by").notNull(),
+  changeDescription: text("change_description"),
+  changedAt: timestamp("changed_at").defaultNow(),
+});
+
+export const contentVersionsRelations = relations(contentVersions, ({ one }) => ({
+  content: one(marketingContent, {
+    fields: [contentVersions.contentId],
+    references: [marketingContent.id],
+  }),
+}));
+
+export const insertContentVersionSchema = createInsertSchema(contentVersions).omit({
+  id: true,
+  changedAt: true,
+});
+
+export type InsertContentVersion = z.infer<typeof insertContentVersionSchema>;
+export type ContentVersion = typeof contentVersions.$inferSelect;
+
+/**
+ * Tabela de Comentários de Conteúdo
+ */
+export const contentComments = pgTable("content_comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId: varchar("content_id").notNull().references(() => marketingContent.id, { onDelete: "cascade" }),
+  comment: text("comment").notNull(),
+  commentedBy: text("commented_by").notNull(),
+  commentedAt: timestamp("commented_at").defaultNow(),
+});
+
+export const contentCommentsRelations = relations(contentComments, ({ one }) => ({
+  content: one(marketingContent, {
+    fields: [contentComments.contentId],
+    references: [marketingContent.id],
+  }),
+}));
+
+export const insertContentCommentSchema = createInsertSchema(contentComments).omit({
+  id: true,
+  commentedAt: true,
+});
+
+export type InsertContentComment = z.infer<typeof insertContentCommentSchema>;
+export type ContentComment = typeof contentComments.$inferSelect;
+
+/**
+ * Tabela de Tags de Conteúdo
+ */
+export const contentTags = pgTable("content_tags", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId: varchar("content_id").notNull().references(() => marketingContent.id, { onDelete: "cascade" }),
+  tag: text("tag").notNull(),
+});
+
+export const contentTagsRelations = relations(contentTags, ({ one }) => ({
+  content: one(marketingContent, {
+    fields: [contentTags.contentId],
+    references: [marketingContent.id],
+  }),
+}));
+
+export const insertContentTagSchema = createInsertSchema(contentTags).omit({
+  id: true,
+});
+
+export type InsertContentTag = z.infer<typeof insertContentTagSchema>;
+export type ContentTag = typeof contentTags.$inferSelect;
+
+/**
+ * Tabela de Métricas de Marketing
+ * 
+ * Registra métricas diárias de performance de email marketing.
+ * Link com atividades do calendário para rastreabilidade.
+ */
+export const marketingMetrics = pgTable("marketing_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: timestamp("date").notNull(),
+  collaborator: text("collaborator").notNull(),
+  activityId: varchar("activity_id").references(() => marketingActivities.id),
+  activityTitle: text("activity_title"),
+  platform: varchar("platform", { length: 50 }).notNull(),
+  emailsSent: integer("emails_sent").notNull().default(0),
+  openRate: decimal("open_rate", { precision: 5, scale: 2 }).default("0"),
+  emailsBounced: integer("emails_bounced").notNull().default(0),
+  emailsReturned: text("emails_returned"),
+  bounceReasons: text("bounce_reasons"),
+  observations: text("observations"),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  recordedAt: timestamp("recorded_at").defaultNow(),
+});
+
+export const marketingMetricsRelations = relations(marketingMetrics, ({ one }) => ({
+  activity: one(marketingActivities, {
+    fields: [marketingMetrics.activityId],
+    references: [marketingActivities.id],
+  }),
+  creator: one(users, {
+    fields: [marketingMetrics.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const insertMarketingMetricSchema = createInsertSchema(marketingMetrics).omit({
+  id: true,
+  recordedAt: true,
+});
+
+export type InsertMarketingMetric = z.infer<typeof insertMarketingMetricSchema>;
+export type MarketingMetric = typeof marketingMetrics.$inferSelect;

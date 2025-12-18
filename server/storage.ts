@@ -14,6 +14,12 @@ import {
   processes,
   campaigns,
   leads,
+  marketingActivities,
+  marketingContent,
+  contentVersions,
+  contentComments,
+  contentTags,
+  marketingMetrics,
   type User,
   type UpsertUser,
   type Budget,
@@ -30,9 +36,21 @@ import {
   type InsertCampaign,
   type Lead,
   type InsertLead,
+  type MarketingActivity,
+  type InsertMarketingActivity,
+  type MarketingContent,
+  type InsertMarketingContent,
+  type ContentVersion,
+  type InsertContentVersion,
+  type ContentComment,
+  type InsertContentComment,
+  type ContentTag,
+  type InsertContentTag,
+  type MarketingMetric,
+  type InsertMarketingMetric,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and, gte, lte, like, ilike } from "drizzle-orm";
 
 /**
  * Interface de Storage
@@ -82,6 +100,42 @@ export interface IStorage {
   // ========== Lead Operations ==========
   getLeads(): Promise<Lead[]>;
   createLead(lead: InsertLead): Promise<Lead>;
+  
+  // ========== Marketing Activity Operations ==========
+  getMarketingActivities(year: number, month: number): Promise<MarketingActivity[]>;
+  getMarketingActivity(id: string): Promise<MarketingActivity | undefined>;
+  createMarketingActivity(activity: InsertMarketingActivity): Promise<MarketingActivity>;
+  updateMarketingActivity(id: string, activity: Partial<InsertMarketingActivity>): Promise<MarketingActivity>;
+  deleteMarketingActivity(id: string): Promise<void>;
+  
+  // ========== Marketing Content Operations ==========
+  getMarketingContents(filters?: { clientType?: string; contentType?: string; search?: string; tag?: string }): Promise<MarketingContent[]>;
+  getMarketingContent(id: string): Promise<MarketingContent | undefined>;
+  createMarketingContent(content: InsertMarketingContent): Promise<MarketingContent>;
+  updateMarketingContent(id: string, content: Partial<InsertMarketingContent>, changeDescription?: string, changedBy?: string): Promise<MarketingContent>;
+  deleteMarketingContent(id: string): Promise<void>;
+  
+  // ========== Content Version Operations ==========
+  getContentVersions(contentId: string): Promise<ContentVersion[]>;
+  restoreContentVersion(contentId: string, versionNumber: number, changedBy: string): Promise<MarketingContent>;
+  
+  // ========== Content Comment Operations ==========
+  getContentComments(contentId: string): Promise<ContentComment[]>;
+  createContentComment(comment: InsertContentComment): Promise<ContentComment>;
+  deleteContentComment(id: string): Promise<void>;
+  
+  // ========== Content Tag Operations ==========
+  getContentTags(contentId: string): Promise<ContentTag[]>;
+  getAllTags(): Promise<string[]>;
+  setContentTags(contentId: string, tags: string[]): Promise<void>;
+  
+  // ========== Marketing Metric Operations ==========
+  getMarketingMetrics(filters?: { dateFrom?: Date; dateTo?: Date; collaborator?: string; platform?: string }): Promise<MarketingMetric[]>;
+  getMarketingMetric(id: string): Promise<MarketingMetric | undefined>;
+  createMarketingMetric(metric: InsertMarketingMetric): Promise<MarketingMetric>;
+  updateMarketingMetric(id: string, metric: Partial<InsertMarketingMetric>): Promise<MarketingMetric>;
+  deleteMarketingMetric(id: string): Promise<void>;
+  getMetricsByActivity(activityId: string): Promise<MarketingMetric[]>;
 }
 
 /**
@@ -268,6 +322,252 @@ export class DatabaseStorage implements IStorage {
   async createLead(leadData: InsertLead): Promise<Lead> {
     const [lead] = await db.insert(leads).values(leadData).returning();
     return lead;
+  }
+  
+  // ========== Marketing Activity Operations ==========
+  
+  async getMarketingActivities(year: number, month: number): Promise<MarketingActivity[]> {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59);
+    
+    return await db.select()
+      .from(marketingActivities)
+      .where(and(
+        gte(marketingActivities.date, startDate),
+        lte(marketingActivities.date, endDate)
+      ))
+      .orderBy(marketingActivities.date);
+  }
+  
+  async getMarketingActivity(id: string): Promise<MarketingActivity | undefined> {
+    const [activity] = await db.select().from(marketingActivities).where(eq(marketingActivities.id, id));
+    return activity;
+  }
+  
+  async createMarketingActivity(activityData: InsertMarketingActivity): Promise<MarketingActivity> {
+    const [activity] = await db.insert(marketingActivities).values(activityData).returning();
+    return activity;
+  }
+  
+  async updateMarketingActivity(id: string, activityData: Partial<InsertMarketingActivity>): Promise<MarketingActivity> {
+    const [activity] = await db
+      .update(marketingActivities)
+      .set({ ...activityData, updatedAt: new Date() })
+      .where(eq(marketingActivities.id, id))
+      .returning();
+    return activity;
+  }
+  
+  async deleteMarketingActivity(id: string): Promise<void> {
+    await db.delete(marketingActivities).where(eq(marketingActivities.id, id));
+  }
+  
+  // ========== Marketing Content Operations ==========
+  
+  async getMarketingContents(filters?: { clientType?: string; contentType?: string; search?: string; tag?: string }): Promise<MarketingContent[]> {
+    let query = db.select().from(marketingContent);
+    const conditions = [];
+    
+    if (filters?.clientType && filters.clientType !== "Todos") {
+      conditions.push(eq(marketingContent.clientType, filters.clientType));
+    }
+    if (filters?.contentType && filters.contentType !== "Todos") {
+      conditions.push(eq(marketingContent.contentType, filters.contentType));
+    }
+    if (filters?.search) {
+      conditions.push(ilike(marketingContent.title, `%${filters.search}%`));
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select()
+        .from(marketingContent)
+        .where(and(...conditions))
+        .orderBy(desc(marketingContent.createdAt));
+    }
+    
+    return await db.select().from(marketingContent).orderBy(desc(marketingContent.createdAt));
+  }
+  
+  async getMarketingContent(id: string): Promise<MarketingContent | undefined> {
+    const [content] = await db.select().from(marketingContent).where(eq(marketingContent.id, id));
+    return content;
+  }
+  
+  async createMarketingContent(contentData: InsertMarketingContent): Promise<MarketingContent> {
+    const [content] = await db.insert(marketingContent).values(contentData).returning();
+    
+    // Create first version
+    await db.insert(contentVersions).values({
+      contentId: content.id,
+      versionNumber: 1,
+      contentData: content.contentData,
+      changedBy: contentData.createdBy,
+      changeDescription: "Versão inicial",
+    });
+    
+    return content;
+  }
+  
+  async updateMarketingContent(id: string, contentData: Partial<InsertMarketingContent>, changeDescription?: string, changedBy?: string): Promise<MarketingContent> {
+    // Get current content
+    const [current] = await db.select().from(marketingContent).where(eq(marketingContent.id, id));
+    if (!current) throw new Error("Conteúdo não encontrado");
+    
+    const newVersion = current.currentVersion + 1;
+    
+    // Create new version
+    if (contentData.contentData && changedBy) {
+      await db.insert(contentVersions).values({
+        contentId: id,
+        versionNumber: newVersion,
+        contentData: contentData.contentData,
+        changedBy,
+        changeDescription: changeDescription || "Atualização",
+      });
+    }
+    
+    const [content] = await db
+      .update(marketingContent)
+      .set({ 
+        ...contentData, 
+        currentVersion: contentData.contentData ? newVersion : current.currentVersion,
+        updatedAt: new Date() 
+      })
+      .where(eq(marketingContent.id, id))
+      .returning();
+    return content;
+  }
+  
+  async deleteMarketingContent(id: string): Promise<void> {
+    await db.delete(marketingContent).where(eq(marketingContent.id, id));
+  }
+  
+  // ========== Content Version Operations ==========
+  
+  async getContentVersions(contentId: string): Promise<ContentVersion[]> {
+    return await db.select()
+      .from(contentVersions)
+      .where(eq(contentVersions.contentId, contentId))
+      .orderBy(desc(contentVersions.versionNumber));
+  }
+  
+  async restoreContentVersion(contentId: string, versionNumber: number, changedBy: string): Promise<MarketingContent> {
+    const [version] = await db.select()
+      .from(contentVersions)
+      .where(and(
+        eq(contentVersions.contentId, contentId),
+        eq(contentVersions.versionNumber, versionNumber)
+      ));
+    
+    if (!version) throw new Error("Versão não encontrada");
+    
+    return await this.updateMarketingContent(
+      contentId,
+      { contentData: version.contentData },
+      `Restaurado da versão ${versionNumber}`,
+      changedBy
+    );
+  }
+  
+  // ========== Content Comment Operations ==========
+  
+  async getContentComments(contentId: string): Promise<ContentComment[]> {
+    return await db.select()
+      .from(contentComments)
+      .where(eq(contentComments.contentId, contentId))
+      .orderBy(desc(contentComments.commentedAt));
+  }
+  
+  async createContentComment(commentData: InsertContentComment): Promise<ContentComment> {
+    const [comment] = await db.insert(contentComments).values(commentData).returning();
+    return comment;
+  }
+  
+  async deleteContentComment(id: string): Promise<void> {
+    await db.delete(contentComments).where(eq(contentComments.id, id));
+  }
+  
+  // ========== Content Tag Operations ==========
+  
+  async getContentTags(contentId: string): Promise<ContentTag[]> {
+    return await db.select()
+      .from(contentTags)
+      .where(eq(contentTags.contentId, contentId));
+  }
+  
+  async getAllTags(): Promise<string[]> {
+    const tags = await db.selectDistinct({ tag: contentTags.tag }).from(contentTags);
+    return tags.map(t => t.tag);
+  }
+  
+  async setContentTags(contentId: string, tags: string[]): Promise<void> {
+    // Remove existing tags
+    await db.delete(contentTags).where(eq(contentTags.contentId, contentId));
+    
+    // Add new tags
+    if (tags.length > 0) {
+      await db.insert(contentTags).values(
+        tags.map(tag => ({ contentId, tag }))
+      );
+    }
+  }
+  
+  // ========== Marketing Metric Operations ==========
+  
+  async getMarketingMetrics(filters?: { dateFrom?: Date; dateTo?: Date; collaborator?: string; platform?: string }): Promise<MarketingMetric[]> {
+    const conditions = [];
+    
+    if (filters?.dateFrom) {
+      conditions.push(gte(marketingMetrics.date, filters.dateFrom));
+    }
+    if (filters?.dateTo) {
+      conditions.push(lte(marketingMetrics.date, filters.dateTo));
+    }
+    if (filters?.collaborator && filters.collaborator !== "Todos") {
+      conditions.push(eq(marketingMetrics.collaborator, filters.collaborator));
+    }
+    if (filters?.platform && filters.platform !== "Todas") {
+      conditions.push(eq(marketingMetrics.platform, filters.platform));
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select()
+        .from(marketingMetrics)
+        .where(and(...conditions))
+        .orderBy(desc(marketingMetrics.date));
+    }
+    
+    return await db.select().from(marketingMetrics).orderBy(desc(marketingMetrics.date));
+  }
+  
+  async getMarketingMetric(id: string): Promise<MarketingMetric | undefined> {
+    const [metric] = await db.select().from(marketingMetrics).where(eq(marketingMetrics.id, id));
+    return metric;
+  }
+  
+  async createMarketingMetric(metricData: InsertMarketingMetric): Promise<MarketingMetric> {
+    const [metric] = await db.insert(marketingMetrics).values(metricData).returning();
+    return metric;
+  }
+  
+  async updateMarketingMetric(id: string, metricData: Partial<InsertMarketingMetric>): Promise<MarketingMetric> {
+    const [metric] = await db
+      .update(marketingMetrics)
+      .set(metricData)
+      .where(eq(marketingMetrics.id, id))
+      .returning();
+    return metric;
+  }
+  
+  async deleteMarketingMetric(id: string): Promise<void> {
+    await db.delete(marketingMetrics).where(eq(marketingMetrics.id, id));
+  }
+  
+  async getMetricsByActivity(activityId: string): Promise<MarketingMetric[]> {
+    return await db.select()
+      .from(marketingMetrics)
+      .where(eq(marketingMetrics.activityId, activityId))
+      .orderBy(desc(marketingMetrics.date));
   }
 }
 
