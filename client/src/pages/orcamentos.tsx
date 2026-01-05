@@ -343,6 +343,7 @@ export default function Orcamentos() {
    * - Cliente obrigatório
    * - E-mail obrigatório e válido
    * - Pelo menos uma linha marcada
+   * - Todos os 3 checkboxes de conferência marcados
    */
   const handleSubmit = () => {
     // Validação: Cliente
@@ -371,6 +372,16 @@ export default function Orcamentos() {
       toast({
         title: "Nenhuma linha selecionada",
         description: "Por favor, marque pelo menos uma linha para incluir no cálculo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validação: Todos os 3 checkboxes de conferência devem estar marcados
+    if (!conferirRazaoSocial || !conferirDatas || !conferirValores) {
+      toast({
+        title: "Checklist incompleto",
+        description: "Por favor, marque todos os itens do checklist de conferência antes de salvar.",
         variant: "destructive",
       });
       return;
