@@ -307,6 +307,22 @@ export default function Orcamentos() {
     setApproved(budget.approved || false);
     setRejected((budget as any).rejected || false);
     
+    // Calcula valorCliente para Linha 5: se line5ValorCmCol é 0 mas há valorTotal,
+    // recuperamos o valor original dividindo valorTotal pelo formato
+    let line5ValorCliente = budget.line5ValorCmCol || "";
+    const line5Formato = parseFloat(budget.line5Formato || "0");
+    const valorTotalNum = parseFloat(budget.valorTotal || "0");
+    const diagramacaoNum = parseFloat(budget.diagramacao || "0");
+    
+    // Se valorCliente está zerado mas temos valorTotal e formato, calcular retroativamente
+    if ((!line5ValorCliente || parseFloat(line5ValorCliente) === 0) && 
+        budget.line5IncluirTotal && line5Formato > 0 && valorTotalNum > 0) {
+      // valorTotal = (valorCliente × formato) + diagramacao
+      // valorCliente = (valorTotal - diagramacao) / formato
+      const calculatedValorCliente = (valorTotalNum - diagramacaoNum) / line5Formato;
+      line5ValorCliente = calculatedValorCliente.toFixed(2);
+    }
+    
     // Carrega as linhas com todos os valores do banco
     setLines([
       { 
@@ -339,7 +355,7 @@ export default function Orcamentos() {
         formato: budget.line5Formato || "", 
         incluirTotal: budget.line5IncluirTotal || false,
         valorLiquido: "",
-        valorCliente: budget.line5ValorCmCol || "",
+        valorCliente: line5ValorCliente,
         imposto: ""
       },
     ]);
