@@ -45,6 +45,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Retorna o próximo número de orçamento disponível
+  app.get("/api/budgets/next-number", isAuthenticated, async (req, res) => {
+    try {
+      const nextNumber = await storage.getNextBudgetNumber();
+      res.json({ nextNumber });
+    } catch (error) {
+      console.error("Error fetching next budget number:", error);
+      res.status(500).json({ message: "Failed to fetch next budget number" });
+    }
+  });
+
   // Busca orçamento por ID
   app.get("/api/budgets/:id", isAuthenticated, async (req, res) => {
     try {

@@ -59,6 +59,12 @@ export default function Orcamentos() {
   const [observations, setObservations] = useState("");
   const [approved, setApproved] = useState(false);
 
+  // Busca o próximo número de orçamento quando o dialog abre
+  const { data: nextNumberData, refetch: refetchNextNumber } = useQuery<{ nextNumber: number }>({
+    queryKey: ["/api/budgets/next-number"],
+    enabled: isDialogOpen && isAuthenticated,
+  });
+
   // Estados das 5 linhas de publicação
   const [lines, setLines] = useState<BudgetLine[]>([
     { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
@@ -111,6 +117,7 @@ export default function Orcamentos() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/budgets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/budgets/next-number"] });
       toast({
         title: "Sucesso!",
         description: "Orçamento criado com sucesso.",
@@ -318,6 +325,12 @@ export default function Orcamentos() {
               <DialogDescription>
                 Preencha os dados para criar um orçamento de publicação em jornal oficial
               </DialogDescription>
+              <div className="mt-2 p-3 bg-muted rounded-md">
+                <span className="text-sm text-muted-foreground">Número do Orçamento: </span>
+                <span className="font-mono font-bold text-lg" data-testid="text-budget-number">
+                  Nº Orc. {String(nextNumberData?.nextNumber || 1).padStart(5, '0')}
+                </span>
+              </div>
             </DialogHeader>
             
             <div className="grid gap-6 py-4">
@@ -538,6 +551,7 @@ export default function Orcamentos() {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
+                  <th className="text-left p-3 text-sm font-medium">Nº Orc.</th>
                   <th className="text-left p-3 text-sm font-medium">Cliente</th>
                   <th className="text-left p-3 text-sm font-medium">E-mail</th>
                   <th className="text-left p-3 text-sm font-medium">Valor Total</th>
@@ -549,6 +563,9 @@ export default function Orcamentos() {
               <tbody>
                 {filteredBudgets.map((budget) => (
                   <tr key={budget.id} className="border-b hover-elevate" data-testid={`row-budget-${budget.id}`}>
+                    <td className="p-3 text-sm font-mono font-semibold" data-testid={`text-budget-number-${budget.id}`}>
+                      {String(budget.budgetNumber || 0).padStart(5, '0')}
+                    </td>
                     <td className="p-3 text-sm font-medium">{budget.clientName}</td>
                     <td className="p-3 text-sm text-muted-foreground">{budget.clientEmail}</td>
                     <td className="p-3 font-mono text-sm font-semibold">

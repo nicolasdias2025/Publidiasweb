@@ -69,6 +69,7 @@ export interface IStorage {
   createBudget(budget: InsertBudget): Promise<Budget>;
   updateBudget(id: string, budget: Partial<InsertBudget>): Promise<Budget>;
   deleteBudget(id: string): Promise<void>;
+  getNextBudgetNumber(): Promise<number>;
   
   // ========== Client Operations ==========
   getClients(): Promise<Client[]>;
@@ -195,6 +196,18 @@ export class DatabaseStorage implements IStorage {
   
   async deleteBudget(id: string): Promise<void> {
     await db.delete(budgets).where(eq(budgets.id, id));
+  }
+
+  async getNextBudgetNumber(): Promise<number> {
+    // Query the sequence to get the next value preview (without consuming it)
+    const result = await db.execute(sql`
+      SELECT COALESCE(
+        (SELECT last_value + 1 FROM budget_number_seq WHERE is_called = true),
+        (SELECT last_value FROM budget_number_seq WHERE is_called = false),
+        1
+      ) as next_number
+    `);
+    return Number((result.rows[0] as any)?.next_number || 1);
   }
   
   // ========== Client Operations ==========

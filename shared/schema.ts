@@ -23,7 +23,8 @@ import {
   jsonb,
   index,
   integer,
-  boolean
+  boolean,
+  pgSequence
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -91,6 +92,12 @@ export type LoginCredentials = z.infer<typeof loginSchema>;
 // MÓDULO: ORÇAMENTOS (Publicações em Jornais Oficiais)
 // =============================================================================
 
+// Sequência para número do orçamento
+export const budgetNumberSeq = pgSequence("budget_number_seq", {
+  startWith: 1,
+  increment: 1,
+});
+
 /**
  * Tabela de Orçamentos
  * 
@@ -103,6 +110,9 @@ export type LoginCredentials = z.infer<typeof loginSchema>;
  */
 export const budgets = pgTable("budgets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Número do Orçamento (gerado automaticamente pela sequência)
+  budgetNumber: integer("budget_number").notNull().unique().default(sql`nextval('budget_number_seq')`),
   
   // Dados do Cliente
   clientName: text("client_name").notNull(),
@@ -160,6 +170,7 @@ export const budgetsRelations = relations(budgets, ({ one }) => ({
 
 export const insertBudgetSchema = createInsertSchema(budgets).omit({
   id: true,
+  budgetNumber: true,
   createdAt: true,
   updatedAt: true,
 });
