@@ -71,6 +71,11 @@ export default function Orcamentos() {
   });
   const [observations, setObservations] = useState("");
   const [approved, setApproved] = useState(false);
+  
+  // Estados dos checkboxes de conferência
+  const [conferirRazaoSocial, setConferirRazaoSocial] = useState(false);
+  const [conferirDatas, setConferirDatas] = useState(false);
+  const [conferirValores, setConferirValores] = useState(false);
 
   // Busca o próximo número de orçamento quando o dialog abre
   const { data: nextNumberData, refetch: refetchNextNumber } = useQuery<{ nextNumber: number }>({
@@ -212,6 +217,9 @@ export default function Orcamentos() {
     setDate(`${year}-${month}-${day}`);
     setObservations("");
     setApproved(false);
+    setConferirRazaoSocial(false);
+    setConferirDatas(false);
+    setConferirValores(false);
     setLines([
       { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
       { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
@@ -633,7 +641,7 @@ export default function Orcamentos() {
               {/* Campos Finais */}
               <div className="grid gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="data">Data</Label>
+                  <Label htmlFor="data">Data Publicação</Label>
                   <Input
                     id="data"
                     type="date"
@@ -642,6 +650,45 @@ export default function Orcamentos() {
                     data-testid="input-data"
                   />
                 </div>
+
+                {/* Checkboxes de Conferência */}
+                <div className="grid gap-2 p-3 border rounded-md bg-muted/30">
+                  <Label className="text-sm font-medium text-muted-foreground">Checklist de Conferência</Label>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="conferir-razao-social"
+                      checked={conferirRazaoSocial}
+                      onCheckedChange={(checked) => setConferirRazaoSocial(checked === true)}
+                      data-testid="checkbox-conferir-razao-social"
+                    />
+                    <Label htmlFor="conferir-razao-social" className="cursor-pointer text-sm">
+                      CONFERIR - Razão Social e CNPJ - Cliente
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="conferir-datas"
+                      checked={conferirDatas}
+                      onCheckedChange={(checked) => setConferirDatas(checked === true)}
+                      data-testid="checkbox-conferir-datas"
+                    />
+                    <Label htmlFor="conferir-datas" className="cursor-pointer text-sm">
+                      CONFERIR - Datas na publicação
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="conferir-valores"
+                      checked={conferirValores}
+                      onCheckedChange={(checked) => setConferirValores(checked === true)}
+                      data-testid="checkbox-conferir-valores"
+                    />
+                    <Label htmlFor="conferir-valores" className="cursor-pointer text-sm">
+                      CONFERIR - Valores e Negociação
+                    </Label>
+                  </div>
+                </div>
+
                 <div className="grid gap-2">
                   <Label htmlFor="obs">Observações</Label>
                   <Textarea
@@ -715,7 +762,7 @@ export default function Orcamentos() {
                   <th className="text-left p-3 text-sm font-medium">Cliente</th>
                   <th className="text-left p-3 text-sm font-medium">E-mail</th>
                   <th className="text-left p-3 text-sm font-medium">Valor Total</th>
-                  <th className="text-left p-3 text-sm font-medium">Data</th>
+                  <th className="text-left p-3 text-sm font-medium">Data Publicação</th>
                   <th className="text-left p-3 text-sm font-medium">Aprovado</th>
                   <th className="text-right p-3 text-sm font-medium">Ações</th>
                 </tr>
