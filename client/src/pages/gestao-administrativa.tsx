@@ -1,9 +1,6 @@
 import { Route, Switch, useLocation } from "wouter";
 import { useEffect } from "react";
-
-function GestaoOrcamentos() {
-  return <div data-testid="page-gestao-orcamentos"></div>;
-}
+import GestaoOrcamentos from "./gestao-orcamentos";
 
 function GestaoPublicacoes() {
   return <div data-testid="page-gestao-publicacoes"></div>;
