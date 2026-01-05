@@ -429,7 +429,8 @@ export default function Orcamentos() {
       line4IncluirTotal: lines[3].incluirTotal,
       
       line5Jornal: lines[4].jornal || null,
-      line5ValorCmCol: lines[4].valorCmCol || "0",
+      // Para linha 5, usa valorCliente se disponível (campo principal da Tabela de Formação de Preço)
+      line5ValorCmCol: lines[4].valorCliente || lines[4].valorCmCol || "0",
       line5Formato: lines[4].formato || "0",
       line5IncluirTotal: lines[4].incluirTotal,
       
