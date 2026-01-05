@@ -56,6 +56,9 @@ export default function Orcamentos() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
+  const [viewingBudget, setViewingBudget] = useState<Budget | null>(null);
 
   // Estados do formulário
   const [clientName, setClientName] = useState("");
@@ -174,6 +177,41 @@ export default function Orcamentos() {
     },
   });
 
+  // Mutação para atualizar orçamento
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      await apiRequest("PATCH", `/api/budgets/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/budgets"] });
+      toast({
+        title: "Sucesso!",
+        description: "Orçamento atualizado com sucesso.",
+      });
+      resetForm();
+      setEditingBudgetId(null);
+      setIsDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Não autorizado",
+          description: "Você foi desconectado. Fazendo login novamente...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar orçamento. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Mutação para deletar orçamento
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -207,6 +245,7 @@ export default function Orcamentos() {
   });
 
   const resetForm = () => {
+    setEditingBudgetId(null);
     setClientName("");
     setClientEmail("");
     setDiagramacao("");
@@ -235,6 +274,67 @@ export default function Orcamentos() {
     const newLines = [...lines];
     newLines[index] = { ...newLines[index], [field]: value };
     setLines(newLines);
+  };
+
+  // Função para carregar dados do orçamento no formulário para edição
+  const loadBudgetForEdit = (budget: Budget) => {
+    setEditingBudgetId(budget.id);
+    setClientName(budget.clientName);
+    setClientEmail(budget.clientEmail);
+    setDiagramacao(budget.diagramacao || "");
+    
+    // Converte a data para formato YYYY-MM-DD
+    const dateStr = typeof budget.date === 'string' ? budget.date : budget.date.toISOString();
+    setDate(dateStr.split('T')[0]);
+    
+    setObservations(budget.observations || "");
+    setApproved(budget.approved || false);
+    setRejected(false);
+    
+    // Carrega as linhas
+    setLines([
+      { 
+        jornal: budget.line1Jornal || "", 
+        valorCmCol: budget.line1ValorCmCol || "", 
+        formato: budget.line1Formato || "", 
+        incluirTotal: budget.line1IncluirTotal || false 
+      },
+      { 
+        jornal: budget.line2Jornal || "", 
+        valorCmCol: budget.line2ValorCmCol || "", 
+        formato: budget.line2Formato || "", 
+        incluirTotal: budget.line2IncluirTotal || false 
+      },
+      { 
+        jornal: budget.line3Jornal || "", 
+        valorCmCol: budget.line3ValorCmCol || "", 
+        formato: budget.line3Formato || "", 
+        incluirTotal: budget.line3IncluirTotal || false 
+      },
+      { 
+        jornal: budget.line4Jornal || "", 
+        valorCmCol: budget.line4ValorCmCol || "", 
+        formato: budget.line4Formato || "", 
+        incluirTotal: budget.line4IncluirTotal || false 
+      },
+      { 
+        jornal: budget.line5Jornal || "", 
+        valorCmCol: budget.line5ValorCmCol || "", 
+        formato: budget.line5Formato || "", 
+        incluirTotal: budget.line5IncluirTotal || false,
+        valorLiquido: "",
+        valorCliente: "",
+        imposto: ""
+      },
+    ]);
+    
+    setIsDialogOpen(true);
+  };
+
+  // Função para abrir visualização do orçamento
+  const openViewDialog = (budget: Budget) => {
+    setViewingBudget(budget);
+    setIsViewDialogOpen(true);
   };
 
   /**
@@ -313,7 +413,11 @@ export default function Orcamentos() {
       approved,
     };
 
-    createMutation.mutate(budgetData);
+    if (editingBudgetId) {
+      updateMutation.mutate({ id: editingBudgetId, data: budgetData });
+    } else {
+      createMutation.mutate(budgetData);
+    }
   };
 
   // Redirecionar para login se não autenticado
@@ -359,14 +463,18 @@ export default function Orcamentos() {
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Criar Novo Orçamento</DialogTitle>
+              <DialogTitle>{editingBudgetId ? "Editar Orçamento" : "Criar Novo Orçamento"}</DialogTitle>
               <DialogDescription>
-                Preencha os dados para criar um orçamento de publicação em jornal oficial
+                {editingBudgetId 
+                  ? "Altere os dados do orçamento de publicação em jornal oficial" 
+                  : "Preencha os dados para criar um orçamento de publicação em jornal oficial"}
               </DialogDescription>
               <div className="mt-2 p-3 bg-muted rounded-md">
                 <span className="text-sm text-muted-foreground">Número do Orçamento: </span>
                 <span className="font-mono font-bold text-lg" data-testid="text-budget-number">
-                  Nº Orc. {String(nextNumberData?.nextNumber || 1).padStart(5, '0')}
+                  Nº Orc. {editingBudgetId 
+                    ? String(budgets.find(b => b.id === editingBudgetId)?.budgetNumber || 0).padStart(5, '0')
+                    : String(nextNumberData?.nextNumber || 1).padStart(5, '0')}
                 </span>
               </div>
             </DialogHeader>
@@ -742,10 +850,12 @@ export default function Orcamentos() {
               </Button>
               <Button 
                 onClick={handleSubmit}
-                disabled={createMutation.isPending}
+                disabled={createMutation.isPending || updateMutation.isPending}
                 data-testid="button-save"
               >
-                {createMutation.isPending ? "Salvando..." : "Salvar Orçamento"}
+                {(createMutation.isPending || updateMutation.isPending) 
+                  ? "Salvando..." 
+                  : editingBudgetId ? "Atualizar Orçamento" : "Salvar Orçamento"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -809,10 +919,20 @@ export default function Orcamentos() {
                     </td>
                     <td className="p-3">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" data-testid={`button-view-${budget.id}`}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => openViewDialog(budget)}
+                          data-testid={`button-view-${budget.id}`}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" data-testid={`button-edit-${budget.id}`}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => loadBudgetForEdit(budget)}
+                          data-testid={`button-edit-${budget.id}`}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button 
@@ -833,6 +953,143 @@ export default function Orcamentos() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Dialog de Visualização */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Visualizar Orçamento</DialogTitle>
+            <DialogDescription>
+              Detalhes do orçamento de publicação
+            </DialogDescription>
+            {viewingBudget && (
+              <div className="mt-2 p-3 bg-muted rounded-md">
+                <span className="text-sm text-muted-foreground">Número do Orçamento: </span>
+                <span className="font-mono font-bold text-lg">
+                  Nº Orc. {String(viewingBudget.budgetNumber || 0).padStart(5, '0')}
+                </span>
+              </div>
+            )}
+          </DialogHeader>
+
+          {viewingBudget && (
+            <div className="grid gap-6 py-4">
+              {/* Dados do Cliente */}
+              <div className="grid gap-4">
+                <h3 className="text-sm font-semibold border-b pb-2">Dados do Cliente</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Cliente</Label>
+                    <p className="font-medium" data-testid="view-client-name">{viewingBudget.clientName}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">E-mail</Label>
+                    <p className="font-medium" data-testid="view-client-email">{viewingBudget.clientEmail}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Linhas de Publicação */}
+              <div className="grid gap-4">
+                <h3 className="text-sm font-semibold border-b pb-2">Linhas de Publicação</h3>
+                <div className="space-y-3">
+                  {[
+                    { jornal: viewingBudget.line1Jornal, valor: viewingBudget.line1ValorCmCol, formato: viewingBudget.line1Formato, incluir: viewingBudget.line1IncluirTotal },
+                    { jornal: viewingBudget.line2Jornal, valor: viewingBudget.line2ValorCmCol, formato: viewingBudget.line2Formato, incluir: viewingBudget.line2IncluirTotal },
+                    { jornal: viewingBudget.line3Jornal, valor: viewingBudget.line3ValorCmCol, formato: viewingBudget.line3Formato, incluir: viewingBudget.line3IncluirTotal },
+                    { jornal: viewingBudget.line4Jornal, valor: viewingBudget.line4ValorCmCol, formato: viewingBudget.line4Formato, incluir: viewingBudget.line4IncluirTotal },
+                    { jornal: viewingBudget.line5Jornal, valor: viewingBudget.line5ValorCmCol, formato: viewingBudget.line5Formato, incluir: viewingBudget.line5IncluirTotal },
+                  ].map((line, index) => (
+                    line.jornal && (
+                      <div key={index} className="p-3 border rounded-md bg-muted/30">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {line.incluir && <CheckCircle2 className="h-4 w-4 text-chart-2" />}
+                            <span className="font-medium">Linha {index + 1}: {line.jornal}</span>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Formato: {line.formato} | Valor: R$ {parseFloat(line.valor || "0").toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+
+              {/* Valores */}
+              <div className="grid gap-4">
+                <h3 className="text-sm font-semibold border-b pb-2">Valores</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Diagramação</Label>
+                    <p className="font-mono font-medium">R$ {parseFloat(viewingBudget.diagramacao || "0").toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Valor Total</Label>
+                    <p className="font-mono font-bold text-lg text-chart-2" data-testid="view-valor-total">
+                      R$ {parseFloat(viewingBudget.valorTotal).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Data e Status */}
+              <div className="grid gap-4">
+                <h3 className="text-sm font-semibold border-b pb-2">Data e Status</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Data Publicação</Label>
+                    <p className="font-medium">
+                      {(() => {
+                        const dateStr = typeof viewingBudget.date === 'string' ? viewingBudget.date : viewingBudget.date.toISOString();
+                        const dateParts = dateStr.split('T')[0].split('-');
+                        return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                      })()}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Status</Label>
+                    <div className="flex items-center gap-2">
+                      {viewingBudget.approved ? (
+                        <>
+                          <CheckCircle2 className="h-4 w-4 text-chart-2" />
+                          <span className="font-medium text-chart-2">Aprovado</span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">Pendente</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Observações */}
+              {viewingBudget.observations && (
+                <div className="grid gap-2">
+                  <h3 className="text-sm font-semibold border-b pb-2">Observações</h3>
+                  <p className="text-sm text-muted-foreground">{viewingBudget.observations}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+              Fechar
+            </Button>
+            <Button onClick={() => {
+              if (viewingBudget) {
+                setIsViewDialogOpen(false);
+                loadBudgetForEdit(viewingBudget);
+              }
+            }}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
