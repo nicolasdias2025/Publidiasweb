@@ -67,10 +67,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log dados recebidos para debug
       console.log("[POST /api/budgets] Received data:", JSON.stringify(req.body, null, 2));
       
-      const budgetData = insertBudgetSchema.parse({
+      // Converter string de data para objeto Date
+      const requestData = {
         ...req.body,
         createdBy: userId,
-      });
+        date: req.body.date ? new Date(req.body.date) : new Date(),
+      };
+      
+      const budgetData = insertBudgetSchema.parse(requestData);
       
       console.log("[POST /api/budgets] Parsed data:", JSON.stringify(budgetData, null, 2));
       
