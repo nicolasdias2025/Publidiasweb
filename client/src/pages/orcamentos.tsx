@@ -15,7 +15,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Eye, Edit, Trash2, CheckCircle2 } from "lucide-react";
+import { Plus, Search, Eye, Edit, Trash2, CheckCircle2, XCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -71,6 +71,7 @@ export default function Orcamentos() {
   });
   const [observations, setObservations] = useState("");
   const [approved, setApproved] = useState(false);
+  const [rejected, setRejected] = useState(false);
   
   // Estados dos checkboxes de conferência
   const [conferirRazaoSocial, setConferirRazaoSocial] = useState(false);
@@ -217,6 +218,7 @@ export default function Orcamentos() {
     setDate(`${year}-${month}-${day}`);
     setObservations("");
     setApproved(false);
+    setRejected(false);
     setConferirRazaoSocial(false);
     setConferirDatas(false);
     setConferirValores(false);
@@ -710,6 +712,18 @@ export default function Orcamentos() {
                   <Label htmlFor="aprovado" className="cursor-pointer flex items-center gap-2">
                     <CheckCircle2 className={`h-4 w-4 ${approved ? 'text-chart-2' : 'text-muted-foreground'}`} />
                     Aprovado
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="reprovado"
+                    checked={rejected}
+                    onCheckedChange={(checked) => setRejected(checked === true)}
+                    data-testid="checkbox-reprovado"
+                  />
+                  <Label htmlFor="reprovado" className="cursor-pointer flex items-center gap-2">
+                    <XCircle className={`h-4 w-4 ${rejected ? 'text-destructive' : 'text-muted-foreground'}`} />
+                    Reprovado
                   </Label>
                 </div>
               </div>
