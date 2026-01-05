@@ -110,7 +110,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Atualiza orçamento
   app.patch("/api/budgets/:id", isAuthenticated, async (req, res) => {
     try {
-      const budget = await storage.updateBudget(req.params.id, req.body);
+      // Converter string de data para objeto Date se presente
+      const updateData = {
+        ...req.body,
+        date: req.body.date ? new Date(req.body.date) : undefined,
+      };
+      
+      // Remove date se undefined para não sobrescrever
+      if (updateData.date === undefined) {
+        delete updateData.date;
+      }
+      
+      const budget = await storage.updateBudget(req.params.id, updateData);
       res.json(budget);
     } catch (error) {
       console.error("Error updating budget:", error);
