@@ -37,12 +37,17 @@ import type { Budget } from "@shared/schema";
 
 /**
  * Interface para cada linha de publicação
+ * Linhas 1-4: campos padrão
+ * Linha 5: Tabela de Formação de Preço com campos adicionais
  */
 interface BudgetLine {
   jornal: string;
-  valorCmCol: string;
+  valorCmCol: string;       // Valor cm x col./linha (linhas 1-4)
   formato: string;
   incluirTotal: boolean;
+  // Campos exclusivos da Linha 5 (Tabela de Formação de Preço)
+  valorLiquido?: string;    // Valor cm x col./linha LÍQUIDO
+  valorCliente?: string;    // Valor Final cm x col./linha CLIENTE
 }
 
 export default function Orcamentos() {
@@ -66,12 +71,13 @@ export default function Orcamentos() {
   });
 
   // Estados das 5 linhas de publicação
+  // Linhas 1-4: padrão | Linha 5: Tabela de Formação de Preço
   const [lines, setLines] = useState<BudgetLine[]>([
     { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
     { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
     { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
     { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
-    { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
+    { jornal: "", valorCmCol: "", formato: "", incluirTotal: false, valorLiquido: "", valorCliente: "" },
   ]);
 
   const [valorTotal, setValorTotal] = useState("0.00");
@@ -80,7 +86,8 @@ export default function Orcamentos() {
    * CÁLCULO AUTOMÁTICO DO VALOR TOTAL
    * 
    * Regra: Para cada linha marcada (incluirTotal = true):
-   * valor_linha = formato × valor_cm_col
+   * Linhas 1-4: valor_linha = formato × valor_cm_col
+   * Linha 5 (Tabela de Formação de Preço): valor_linha = formato × valorCliente
    * 
    * Valor Total = Σ(valores_linhas_marcadas) + diagramação
    */
@@ -89,14 +96,22 @@ export default function Orcamentos() {
 
     let total = 0;
 
-    // Calcula soma das linhas marcadas (cada linha tem seu próprio formato)
-    lines.forEach(line => {
+    // Calcula soma das linhas 1-4 marcadas
+    lines.slice(0, 4).forEach(line => {
       if (line.incluirTotal && line.valorCmCol && line.formato) {
         const valorCmColNum = parseFloat(line.valorCmCol) || 0;
         const formatoNum = parseFloat(line.formato) || 0;
         total += formatoNum * valorCmColNum;
       }
     });
+
+    // Calcula linha 5 (usa valorCliente)
+    const line5 = lines[4];
+    if (line5.incluirTotal && line5.valorCliente && line5.formato) {
+      const valorClienteNum = parseFloat(line5.valorCliente) || 0;
+      const formatoNum = parseFloat(line5.formato) || 0;
+      total += formatoNum * valorClienteNum;
+    }
 
     // Adiciona diagramação
     total += diagramacaoNum;
@@ -189,7 +204,7 @@ export default function Orcamentos() {
       { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
       { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
       { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
-      { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
+      { jornal: "", valorCmCol: "", formato: "", incluirTotal: false, valorLiquido: "", valorCliente: "" },
     ]);
   };
 
@@ -362,14 +377,14 @@ export default function Orcamentos() {
                 </div>
               </div>
 
-              {/* Linhas de Publicação */}
+              {/* Linhas de Publicação 1-4 */}
               <div className="grid gap-4">
                 <h3 className="text-sm font-semibold border-b pb-2">Linhas de Publicação</h3>
                 <p className="text-xs text-muted-foreground">
                   Marque as linhas que deseja incluir no cálculo do valor total
                 </p>
                 
-                {lines.map((line, index) => (
+                {lines.slice(0, 4).map((line, index) => (
                   <Card key={index} className={line.incluirTotal ? "border-primary" : ""}>
                     <CardContent className="p-4">
                       <div className="grid gap-4">
@@ -435,6 +450,124 @@ export default function Orcamentos() {
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+
+              {/* Linha 5 - Tabela de Formação de Preço */}
+              <div className="grid gap-4">
+                <h3 className="text-sm font-semibold border-b pb-2">Linha 5 - Tabela de Formação de Preço</h3>
+                <Card className={lines[4].incluirTotal ? "border-primary" : ""}>
+                  <CardContent className="p-4">
+                    <div className="grid gap-4">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="line-4-incluir"
+                          checked={lines[4].incluirTotal}
+                          onCheckedChange={(checked) => 
+                            handleLineChange(4, 'incluirTotal', checked === true)
+                          }
+                          data-testid="checkbox-line-5"
+                        />
+                        <Label 
+                          htmlFor="line-4-incluir"
+                          className="font-semibold cursor-pointer"
+                        >
+                          Incluir no total {lines[4].incluirTotal && "(✓ Incluída no total)"}
+                        </Label>
+                      </div>
+                      
+                      {/* Primeira linha: Jornal e Formato */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="line-4-jornal">Jornal</Label>
+                          <Input
+                            id="line-4-jornal"
+                            placeholder="Nome do jornal"
+                            value={lines[4].jornal}
+                            onChange={(e) => handleLineChange(4, 'jornal', e.target.value)}
+                            data-testid="input-jornal-5"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="line-4-formato">Formato</Label>
+                          <Input
+                            id="line-4-formato"
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={lines[4].formato}
+                            onChange={(e) => handleLineChange(4, 'formato', e.target.value)}
+                            data-testid="input-formato-5"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Segunda linha: Valores Líquido e Cliente */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="line-4-liquido">Valor cm x col./linha LÍQUIDO</Label>
+                          <Input
+                            id="line-4-liquido"
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={lines[4].valorLiquido || ""}
+                            onChange={(e) => handleLineChange(4, 'valorLiquido', e.target.value)}
+                            data-testid="input-valor-liquido-5"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="line-4-cliente">Valor Final cm x col./linha CLIENTE</Label>
+                          <Input
+                            id="line-4-cliente"
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={lines[4].valorCliente || ""}
+                            onChange={(e) => handleLineChange(4, 'valorCliente', e.target.value)}
+                            data-testid="input-valor-cliente-5"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Terceira linha: Valores calculados */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label>Valor Final Cliente (calculado)</Label>
+                          <div className="flex h-10 items-center rounded-md border bg-muted px-3 py-2">
+                            <span className="font-mono font-semibold" data-testid="text-valor-final-cliente-5">
+                              R$ {(() => {
+                                const valorCliente = parseFloat(lines[4].valorCliente || "0") || 0;
+                                const formato = parseFloat(lines[4].formato || "0") || 0;
+                                return (valorCliente * formato).toFixed(2);
+                              })()}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            = Valor CLIENTE × Formato
+                          </p>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Lucro (calculado)</Label>
+                          <div className="flex h-10 items-center rounded-md border bg-muted px-3 py-2">
+                            <span className="font-mono font-semibold text-chart-2" data-testid="text-lucro-5">
+                              R$ {(() => {
+                                const valorLiquido = parseFloat(lines[4].valorLiquido || "0") || 0;
+                                const valorCliente = parseFloat(lines[4].valorCliente || "0") || 0;
+                                const formato = parseFloat(lines[4].formato || "0") || 0;
+                                const valorFinalCliente = valorCliente * formato;
+                                const custoLiquido = valorLiquido * formato;
+                                return (valorFinalCliente - custoLiquido).toFixed(2);
+                              })()}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            = Valor Final Cliente - (Valor LÍQUIDO × Formato)
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Cálculo do Total */}
