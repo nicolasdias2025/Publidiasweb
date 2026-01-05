@@ -98,7 +98,7 @@ export default function Orcamentos() {
   ]);
 
   const [valorTotal, setValorTotal] = useState("0.00");
-  const [originalValorTotal, setOriginalValorTotal] = useState<string | null>(null);
+  const [skipAutoCalc, setSkipAutoCalc] = useState(false); // Flag para pular cálculo automático após carregar para edição
 
   /**
    * CÁLCULO AUTOMÁTICO DO VALOR TOTAL
@@ -109,19 +109,13 @@ export default function Orcamentos() {
    * 
    * Valor Total = Σ(valores_linhas_marcadas) + diagramação
    * 
-   * NOTA: Ao editar, preserva o valor original se nenhuma linha foi modificada
+   * NOTA: Ao editar, pula o cálculo automático para preservar o valor original.
+   * O cálculo será reativado quando o usuário modificar qualquer campo.
    */
   useEffect(() => {
-    // Se estamos editando e temos valor original, usar ele inicialmente
-    // O valor só será recalculado quando o usuário mudar as linhas
-    if (originalValorTotal !== null && editingBudgetId) {
-      // Verificar se alguma linha tem dados
-      const hasLineData = lines.some(line => line.jornal || line.valorCmCol || line.formato);
-      if (!hasLineData) {
-        // Preserva o valor original se linhas estão vazias
-        setValorTotal(originalValorTotal);
-        return;
-      }
+    // Pula o cálculo automático quando acabamos de carregar para edição
+    if (skipAutoCalc) {
+      return;
     }
 
     const diagramacaoNum = parseFloat(diagramacao) || 0;
@@ -148,13 +142,8 @@ export default function Orcamentos() {
     // Adiciona diagramação
     total += diagramacaoNum;
 
-    // Se o total calculado é 0 e temos valor original, usar o original
-    if (total === 0 && originalValorTotal !== null && editingBudgetId) {
-      setValorTotal(originalValorTotal);
-    } else {
-      setValorTotal(total.toFixed(2));
-    }
-  }, [diagramacao, lines, originalValorTotal, editingBudgetId]);
+    setValorTotal(total.toFixed(2));
+  }, [diagramacao, lines, skipAutoCalc]);
 
   // Busca orçamentos do backend
   const { data: budgets = [], isLoading } = useQuery<Budget[]>({
@@ -266,7 +255,7 @@ export default function Orcamentos() {
 
   const resetForm = () => {
     setEditingBudgetId(null);
-    setOriginalValorTotal(null);
+    setSkipAutoCalc(false);
     setClientName("");
     setClientEmail("");
     setDiagramacao("");
@@ -299,11 +288,16 @@ export default function Orcamentos() {
 
   // Função para carregar dados do orçamento no formulário para edição
   const loadBudgetForEdit = (budget: Budget) => {
+    // Ativa flag para pular cálculo automático e preservar o valor original
+    setSkipAutoCalc(true);
+    
     setEditingBudgetId(budget.id);
-    setOriginalValorTotal(budget.valorTotal); // Preserva valor original para não recalcular incorretamente
     setClientName(budget.clientName);
     setClientEmail(budget.clientEmail);
     setDiagramacao(budget.diagramacao || "");
+    
+    // Preserva o valor total original do banco de dados
+    setValorTotal(budget.valorTotal);
     
     // Converte a data para formato YYYY-MM-DD
     const dateStr = typeof budget.date === 'string' ? budget.date : budget.date.toISOString();
@@ -313,7 +307,7 @@ export default function Orcamentos() {
     setApproved(budget.approved || false);
     setRejected((budget as any).rejected || false);
     
-    // Carrega as linhas
+    // Carrega as linhas com todos os valores do banco
     setLines([
       { 
         jornal: budget.line1Jornal || "", 
