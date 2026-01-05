@@ -48,6 +48,7 @@ interface BudgetLine {
   // Campos exclusivos da Linha 5 (Tabela de Formação de Preço)
   valorLiquido?: string;    // Valor cm x col./linha LÍQUIDO
   valorCliente?: string;    // Valor Final cm x col./linha CLIENTE
+  imposto?: string;         // Imposto em percentual (%)
 }
 
 export default function Orcamentos() {
@@ -77,7 +78,7 @@ export default function Orcamentos() {
     { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
     { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
     { jornal: "", valorCmCol: "", formato: "", incluirTotal: false },
-    { jornal: "", valorCmCol: "", formato: "", incluirTotal: false, valorLiquido: "", valorCliente: "" },
+    { jornal: "", valorCmCol: "", formato: "", incluirTotal: false, valorLiquido: "", valorCliente: "", imposto: "" },
   ]);
 
   const [valorTotal, setValorTotal] = useState("0.00");
@@ -529,8 +530,20 @@ export default function Orcamentos() {
                         </div>
                       </div>
 
-                      {/* Terceira linha: Valores calculados */}
-                      <div className="grid grid-cols-2 gap-4">
+                      {/* Terceira linha: Imposto e Valores calculados */}
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="line-4-imposto">Imposto (%)</Label>
+                          <Input
+                            id="line-4-imposto"
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={lines[4].imposto || ""}
+                            onChange={(e) => handleLineChange(4, 'imposto', e.target.value)}
+                            data-testid="input-imposto-5"
+                          />
+                        </div>
                         <div className="grid gap-2">
                           <Label>Valor Final Cliente (calculado)</Label>
                           <div className="flex h-10 items-center rounded-md border bg-muted px-3 py-2">
@@ -554,14 +567,16 @@ export default function Orcamentos() {
                                 const valorLiquido = parseFloat(lines[4].valorLiquido || "0") || 0;
                                 const valorCliente = parseFloat(lines[4].valorCliente || "0") || 0;
                                 const formato = parseFloat(lines[4].formato || "0") || 0;
+                                const imposto = parseFloat(lines[4].imposto || "0") || 0;
                                 const valorFinalCliente = valorCliente * formato;
+                                const impostoValor = valorFinalCliente * (imposto / 100);
                                 const custoLiquido = valorLiquido * formato;
-                                return (valorFinalCliente - custoLiquido).toFixed(2);
+                                return (valorFinalCliente - impostoValor - custoLiquido).toFixed(2);
                               })()}
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            = Valor Final Cliente - (Valor LÍQUIDO × Formato)
+                            = Valor Final Cliente - (Imposto %) - (Valor LÍQUIDO × Formato)
                           </p>
                         </div>
                       </div>
