@@ -1,46 +1,42 @@
 /**
- * Local Authentication Setup
+ * Local Authentication Setup with JWT
  * 
- * Implementa autenticação local com username/password usando bcrypt.
+ * Implementa autenticação local com username/password usando bcrypt e JWT.
+ * Tokens são armazenados no localStorage do cliente (funciona em iframes/preview).
  */
 
-import session from "express-session";
 import type { Express, RequestHandler } from "express";
-import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { insertUserSchema, loginSchema } from "@shared/schema";
 
 const SALT_ROUNDS = 10;
+const JWT_EXPIRY = "7d"; // 7 dias
 
-export function getSession() {
-  const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 semana
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
-    ttl: sessionTtl,
-    tableName: "sessions",
-  });
-  const isProduction = !!(process.env.NODE_ENV === "production" || process.env.REPL_ID);
-  return session({
-    secret: process.env.SESSION_SECRET!,
-    store: sessionStore,
-    resave: false,
-    saveUninitialized: false,
-    proxy: isProduction,
-    cookie: {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" as const : "lax" as const,
-      maxAge: sessionTtl,
-    },
-  });
+function getJwtSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new Error("SESSION_SECRET environment variable is required");
+  }
+  return secret;
+}
+
+function generateToken(userId: string): string {
+  return jwt.sign({ userId }, getJwtSecret(), { expiresIn: JWT_EXPIRY });
+}
+
+function verifyToken(token: string): { userId: string } | null {
+  try {
+    const decoded = jwt.verify(token, getJwtSecret()) as { userId: string };
+    return decoded;
+  } catch {
+    return null;
+  }
 }
 
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
-  app.use(getSession());
 
   // Registro de novo usuário
   app.post("/api/auth/register", async (req, res) => {
@@ -69,20 +65,16 @@ export async function setupAuth(app: Express) {
         passwordHash,
       });
       
-      // Criar sessão e salvar explicitamente
-      (req.session as any).userId = user.id;
+      // Gerar token JWT
+      const token = generateToken(user.id);
       
-      req.session.save((err) => {
-        if (err) {
-          console.error("Session save error:", err);
-          return res.status(500).json({ message: "Erro ao criar sessão" });
-        }
-        
-        res.status(201).json({
+      res.status(201).json({
+        user: {
           id: user.id,
           username: user.username,
           email: user.email,
-        });
+        },
+        token,
       });
     } catch (error: any) {
       console.error("Register error:", error);
@@ -110,20 +102,16 @@ export async function setupAuth(app: Express) {
         return res.status(401).json({ message: "Usuário ou senha inválidos" });
       }
       
-      // Criar sessão e salvar explicitamente
-      (req.session as any).userId = user.id;
+      // Gerar token JWT
+      const token = generateToken(user.id);
       
-      req.session.save((err) => {
-        if (err) {
-          console.error("Session save error:", err);
-          return res.status(500).json({ message: "Erro ao criar sessão" });
-        }
-        
-        res.json({
+      res.json({
+        user: {
           id: user.id,
           username: user.username,
           email: user.email,
-        });
+        },
+        token,
       });
     } catch (error: any) {
       console.error("Login error:", error);
@@ -134,25 +122,27 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  // Logout
-  app.post("/api/auth/logout", (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ message: "Erro ao fazer logout" });
-      }
-      res.clearCookie("connect.sid");
-      res.json({ message: "Logout realizado com sucesso" });
-    });
+  // Logout (apenas para limpar token no cliente - não faz nada no servidor com JWT)
+  app.post("/api/auth/logout", (_req, res) => {
+    res.json({ message: "Logout realizado com sucesso" });
   });
 
-  // Retorna usuário atual
+  // Retorna usuário atual (baseado no token)
   app.get("/api/auth/user", async (req, res) => {
-    const userId = (req.session as any)?.userId;
-    if (!userId) {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     
-    const user = await storage.getUser(userId);
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+    
+    if (!decoded) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const user = await storage.getUser(decoded.userId);
     if (!user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -169,17 +159,24 @@ export async function setupAuth(app: Express) {
 }
 
 /**
- * Middleware de autenticação
+ * Middleware de autenticação JWT
  * Protege rotas que requerem usuário autenticado
  */
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  const userId = (req.session as any)?.userId;
+  const authHeader = req.headers.authorization;
   
-  if (!userId) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ message: "Unauthorized" });
   }
   
-  const user = await storage.getUser(userId);
+  const token = authHeader.substring(7);
+  const decoded = verifyToken(token);
+  
+  if (!decoded) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  const user = await storage.getUser(decoded.userId);
   if (!user) {
     return res.status(401).json({ message: "Unauthorized" });
   }

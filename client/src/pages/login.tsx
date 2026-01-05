@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, setAuthToken } from "@/lib/queryClient";
 import { Building2, Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
@@ -53,16 +53,14 @@ export default function LoginPage() {
       const response = await apiRequest("POST", "/api/auth/login", data);
       return response.json();
     },
-    onSuccess: async () => {
+    onSuccess: async (result: { user: any; token: string }) => {
+      setAuthToken(result.token);
       await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
-      const user = queryClient.getQueryData(["/api/auth/user"]);
-      if (user) {
-        toast({
-          title: "Login realizado!",
-          description: "Bem-vindo de volta ao sistema.",
-        });
-        setLocation("/");
-      }
+      toast({
+        title: "Login realizado!",
+        description: "Bem-vindo de volta ao sistema.",
+      });
+      setLocation("/");
     },
     onError: (error: Error) => {
       toast({
@@ -78,16 +76,14 @@ export default function LoginPage() {
       const response = await apiRequest("POST", "/api/auth/register", data);
       return response.json();
     },
-    onSuccess: async () => {
+    onSuccess: async (result: { user: any; token: string }) => {
+      setAuthToken(result.token);
       await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
-      const user = queryClient.getQueryData(["/api/auth/user"]);
-      if (user) {
-        toast({
-          title: "Conta criada!",
-          description: "Você foi autenticado automaticamente.",
-        });
-        setLocation("/");
-      }
+      toast({
+        title: "Conta criada!",
+        description: "Você foi autenticado automaticamente.",
+      });
+      setLocation("/");
     },
     onError: (error: Error) => {
       toast({
