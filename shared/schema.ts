@@ -142,9 +142,11 @@ export const budgets = pgTable("budgets", {
   line4Formato: decimal("line4_formato", { precision: 10, scale: 2 }),
   line4IncluirTotal: boolean("line4_incluir_total").default(false),
   
-  // Linha 5
+  // Linha 5 - Tabela de Formação de Preço
   line5Jornal: text("line5_jornal"),
-  line5ValorCmCol: decimal("line5_valor_cm_col", { precision: 10, scale: 2 }),
+  line5ValorCmCol: decimal("line5_valor_cm_col", { precision: 10, scale: 2 }), // Valor Cliente
+  line5ValorLiquido: decimal("line5_valor_liquido", { precision: 10, scale: 2 }), // Valor Líquido
+  line5Imposto: decimal("line5_imposto", { precision: 10, scale: 2 }), // Imposto (%)
   line5Formato: decimal("line5_formato", { precision: 10, scale: 2 }),
   line5IncluirTotal: boolean("line5_incluir_total").default(false),
   

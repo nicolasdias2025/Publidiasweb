@@ -354,9 +354,9 @@ export default function Orcamentos() {
         valorCmCol: budget.line5ValorCmCol || "", 
         formato: budget.line5Formato || "", 
         incluirTotal: budget.line5IncluirTotal || false,
-        valorLiquido: "",
+        valorLiquido: (budget as any).line5ValorLiquido || "",
         valorCliente: line5ValorCliente,
-        imposto: ""
+        imposto: (budget as any).line5Imposto || ""
       },
     ]);
     
@@ -447,6 +447,8 @@ export default function Orcamentos() {
       line5Jornal: lines[4].jornal || null,
       // Para linha 5, usa valorCliente se disponível (campo principal da Tabela de Formação de Preço)
       line5ValorCmCol: lines[4].valorCliente || lines[4].valorCmCol || "0",
+      line5ValorLiquido: lines[4].valorLiquido || "0", // Valor Líquido
+      line5Imposto: lines[4].imposto || "0", // Imposto (%)
       line5Formato: lines[4].formato || "0",
       line5IncluirTotal: lines[4].incluirTotal,
       
