@@ -61,7 +61,14 @@ export default function Orcamentos() {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [diagramacao, setDiagramacao] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  // Usa data local para evitar problemas de timezone
+  const [date, setDate] = useState(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
   const [observations, setObservations] = useState("");
   const [approved, setApproved] = useState(false);
 
@@ -197,7 +204,12 @@ export default function Orcamentos() {
     setClientName("");
     setClientEmail("");
     setDiagramacao("");
-    setDate(new Date().toISOString().split('T')[0]);
+    // Usa data local para evitar problemas de timezone
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    setDate(`${year}-${month}-${day}`);
     setObservations("");
     setApproved(false);
     setLines([
@@ -720,7 +732,12 @@ export default function Orcamentos() {
                       R$ {parseFloat(budget.valorTotal).toFixed(2)}
                     </td>
                     <td className="p-3 text-sm text-muted-foreground">
-                      {new Date(budget.date).toLocaleDateString('pt-BR')}
+                      {(() => {
+                        // Evita problema de timezone ao exibir data
+                        const dateStr = typeof budget.date === 'string' ? budget.date : budget.date.toISOString();
+                        const dateParts = dateStr.split('T')[0].split('-');
+                        return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                      })()}
                     </td>
                     <td className="p-3">
                       {budget.approved ? (
