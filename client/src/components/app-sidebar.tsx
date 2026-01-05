@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   LayoutDashboard,
   FileText,
@@ -7,6 +8,11 @@ import {
   Settings,
   Megaphone,
   ChevronRight,
+  ChevronDown,
+  FileSpreadsheet,
+  Newspaper,
+  DollarSign,
+  Briefcase,
 } from "lucide-react";
 import {
   Sidebar,
@@ -21,6 +27,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { useLocation } from "wouter";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const menuItems = [
   {
@@ -49,19 +56,42 @@ const menuItems = [
     icon: Receipt,
   },
   {
-    title: "Gestão Administrativa",
-    url: "/gestao-administrativa",
-    icon: Settings,
-  },
-  {
     title: "Marketing",
     url: "/marketing",
     icon: Megaphone,
   },
 ];
 
+const gestaoAdminSubitems = [
+  {
+    title: "Orçamentos",
+    url: "/gestao-administrativa/orcamentos",
+    icon: FileSpreadsheet,
+  },
+  {
+    title: "Publicações",
+    url: "/gestao-administrativa/publicacoes",
+    icon: Newspaper,
+  },
+  {
+    title: "Faturamento",
+    url: "/gestao-administrativa/faturamento",
+    icon: DollarSign,
+  },
+  {
+    title: "Administrativo",
+    url: "/gestao-administrativa/administrativo",
+    icon: Briefcase,
+  },
+];
+
 export function AppSidebar() {
   const [location, setLocation] = useLocation();
+  const [gestaoOpen, setGestaoOpen] = useState(
+    location.startsWith("/gestao-administrativa")
+  );
+
+  const isGestaoActive = location.startsWith("/gestao-administrativa");
 
   return (
     <Sidebar>
@@ -96,6 +126,41 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+
+              <SidebarMenuItem>
+                <Collapsible open={gestaoOpen} onOpenChange={setGestaoOpen}>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      isActive={isGestaoActive}
+                      data-testid="link-gestao-administrativa"
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span>Gestão Administrativa</span>
+                      {gestaoOpen ? (
+                        <ChevronDown className="ml-auto h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="ml-auto h-4 w-4" />
+                      )}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenu className="ml-4 mt-1 border-l pl-2">
+                      {gestaoAdminSubitems.map((subitem) => (
+                        <SidebarMenuItem key={subitem.title}>
+                          <SidebarMenuButton
+                            onClick={() => setLocation(subitem.url)}
+                            isActive={location === subitem.url}
+                            data-testid={`link-gestao-${subitem.title.toLowerCase()}`}
+                          >
+                            <subitem.icon className="h-4 w-4" />
+                            <span>{subitem.title}</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </CollapsibleContent>
+                </Collapsible>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

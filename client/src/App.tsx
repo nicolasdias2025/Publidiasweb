@@ -50,7 +50,7 @@ function Router() {
       <Route path="/clientes" component={Clientes} />
       <Route path="/autorizacoes" component={Autorizacoes} />
       <Route path="/notas-fiscais" component={NotasFiscais} />
-      <Route path="/gestao-administrativa" component={GestaoAdministrativa} />
+      <Route path="/gestao-administrativa/:rest*" component={GestaoAdministrativa} />
       <Route path="/marketing" component={Marketing} />
       <Route component={NotFound} />
     </Switch>
