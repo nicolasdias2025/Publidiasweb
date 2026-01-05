@@ -323,7 +323,7 @@ export default function Orcamentos() {
         formato: budget.line5Formato || "", 
         incluirTotal: budget.line5IncluirTotal || false,
         valorLiquido: "",
-        valorCliente: "",
+        valorCliente: budget.line5ValorCmCol || "",
         imposto: ""
       },
     ]);
