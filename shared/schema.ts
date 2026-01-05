@@ -154,6 +154,7 @@ export const budgets = pgTable("budgets", {
   date: timestamp("date").notNull(),
   observations: text("observations"),
   approved: boolean("approved").default(false), // Checkbox "Aprovado" geral
+  rejected: boolean("rejected").default(false), // Checkbox "Reprovado" geral
   
   // Metadados
   createdBy: varchar("created_by").notNull().references(() => users.id),

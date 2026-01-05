@@ -98,6 +98,7 @@ export default function Orcamentos() {
   ]);
 
   const [valorTotal, setValorTotal] = useState("0.00");
+  const [originalValorTotal, setOriginalValorTotal] = useState<string | null>(null);
 
   /**
    * CÁLCULO AUTOMÁTICO DO VALOR TOTAL
@@ -107,8 +108,22 @@ export default function Orcamentos() {
    * Linha 5 (Tabela de Formação de Preço): valor_linha = formato × valorCliente
    * 
    * Valor Total = Σ(valores_linhas_marcadas) + diagramação
+   * 
+   * NOTA: Ao editar, preserva o valor original se nenhuma linha foi modificada
    */
   useEffect(() => {
+    // Se estamos editando e temos valor original, usar ele inicialmente
+    // O valor só será recalculado quando o usuário mudar as linhas
+    if (originalValorTotal !== null && editingBudgetId) {
+      // Verificar se alguma linha tem dados
+      const hasLineData = lines.some(line => line.jornal || line.valorCmCol || line.formato);
+      if (!hasLineData) {
+        // Preserva o valor original se linhas estão vazias
+        setValorTotal(originalValorTotal);
+        return;
+      }
+    }
+
     const diagramacaoNum = parseFloat(diagramacao) || 0;
 
     let total = 0;
@@ -122,19 +137,24 @@ export default function Orcamentos() {
       }
     });
 
-    // Calcula linha 5 (usa valorCliente)
+    // Calcula linha 5 (usa valorCliente se disponível, senão valorCmCol)
     const line5 = lines[4];
-    if (line5.incluirTotal && line5.valorCliente && line5.formato) {
-      const valorClienteNum = parseFloat(line5.valorCliente) || 0;
+    if (line5.incluirTotal && line5.formato) {
+      const valorNum = parseFloat(line5.valorCliente || line5.valorCmCol || "0") || 0;
       const formatoNum = parseFloat(line5.formato) || 0;
-      total += formatoNum * valorClienteNum;
+      total += formatoNum * valorNum;
     }
 
     // Adiciona diagramação
     total += diagramacaoNum;
 
-    setValorTotal(total.toFixed(2));
-  }, [diagramacao, lines]);
+    // Se o total calculado é 0 e temos valor original, usar o original
+    if (total === 0 && originalValorTotal !== null && editingBudgetId) {
+      setValorTotal(originalValorTotal);
+    } else {
+      setValorTotal(total.toFixed(2));
+    }
+  }, [diagramacao, lines, originalValorTotal, editingBudgetId]);
 
   // Busca orçamentos do backend
   const { data: budgets = [], isLoading } = useQuery<Budget[]>({
@@ -246,6 +266,7 @@ export default function Orcamentos() {
 
   const resetForm = () => {
     setEditingBudgetId(null);
+    setOriginalValorTotal(null);
     setClientName("");
     setClientEmail("");
     setDiagramacao("");
@@ -279,6 +300,7 @@ export default function Orcamentos() {
   // Função para carregar dados do orçamento no formulário para edição
   const loadBudgetForEdit = (budget: Budget) => {
     setEditingBudgetId(budget.id);
+    setOriginalValorTotal(budget.valorTotal); // Preserva valor original para não recalcular incorretamente
     setClientName(budget.clientName);
     setClientEmail(budget.clientEmail);
     setDiagramacao(budget.diagramacao || "");
@@ -289,7 +311,7 @@ export default function Orcamentos() {
     
     setObservations(budget.observations || "");
     setApproved(budget.approved || false);
-    setRejected(false);
+    setRejected((budget as any).rejected || false);
     
     // Carrega as linhas
     setLines([
@@ -422,6 +444,7 @@ export default function Orcamentos() {
       date: new Date(date),
       observations: observations || null,
       approved,
+      rejected,
     };
 
     if (editingBudgetId) {
@@ -898,7 +921,7 @@ export default function Orcamentos() {
                   <th className="text-left p-3 text-sm font-medium">E-mail</th>
                   <th className="text-left p-3 text-sm font-medium">Valor Total</th>
                   <th className="text-left p-3 text-sm font-medium">Data Publicação</th>
-                  <th className="text-left p-3 text-sm font-medium">Aprovado</th>
+                  <th className="text-left p-3 text-sm font-medium">Status</th>
                   <th className="text-right p-3 text-sm font-medium">Ações</th>
                 </tr>
               </thead>
@@ -923,7 +946,15 @@ export default function Orcamentos() {
                     </td>
                     <td className="p-3">
                       {budget.approved ? (
-                        <CheckCircle2 className="h-5 w-5 text-chart-2" />
+                        <div className="flex items-center gap-1">
+                          <CheckCircle2 className="h-4 w-4 text-chart-2" />
+                          <span className="text-xs text-chart-2">Aprovado</span>
+                        </div>
+                      ) : (budget as any).rejected ? (
+                        <div className="flex items-center gap-1">
+                          <XCircle className="h-4 w-4 text-destructive" />
+                          <span className="text-xs text-destructive">Reprovado</span>
+                        </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">Pendente</span>
                       )}
