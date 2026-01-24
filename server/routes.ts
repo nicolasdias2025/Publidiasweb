@@ -520,6 +520,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== Authorization Routes ==========
+  
+  app.get("/api/authorizations", isAuthenticated, async (req, res) => {
+    try {
+      const { dateFrom, dateTo, clientName, jornal } = req.query;
+      const filters: { dateFrom?: Date; dateTo?: Date; clientName?: string; jornal?: string } = {};
+      
+      if (dateFrom) filters.dateFrom = new Date(dateFrom as string);
+      if (dateTo) filters.dateTo = new Date(dateTo as string);
+      if (clientName) filters.clientName = clientName as string;
+      if (jornal) filters.jornal = jornal as string;
+      
+      const authorizations = await storage.getAuthorizations(Object.keys(filters).length > 0 ? filters : undefined);
+      res.json(authorizations);
+    } catch (error) {
+      console.error("Error fetching authorizations:", error);
+      res.status(500).json({ message: "Failed to fetch authorizations" });
+    }
+  });
+
+  app.get("/api/authorizations/:id", isAuthenticated, async (req, res) => {
+    try {
+      const authorization = await storage.getAuthorization(req.params.id);
+      if (!authorization) {
+        return res.status(404).json({ message: "Authorization not found" });
+      }
+      res.json(authorization);
+    } catch (error) {
+      console.error("Error fetching authorization:", error);
+      res.status(500).json({ message: "Failed to fetch authorization" });
+    }
+  });
+
+  app.post("/api/authorizations", isAuthenticated, async (req: any, res) => {
+    try {
+      const authorizationData = {
+        ...req.body,
+        createdBy: req.user.id,
+      };
+      const authorization = await storage.createAuthorization(authorizationData);
+      res.status(201).json(authorization);
+    } catch (error) {
+      console.error("Error creating authorization:", error);
+      res.status(400).json({ message: "Failed to create authorization" });
+    }
+  });
+
+  app.patch("/api/authorizations/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const authorization = await storage.updateAuthorization(req.params.id, req.body);
+      if (!authorization) {
+        return res.status(404).json({ message: "Authorization not found" });
+      }
+      res.json(authorization);
+    } catch (error) {
+      console.error("Error updating authorization:", error);
+      res.status(400).json({ message: "Failed to update authorization" });
+    }
+  });
+
+  app.delete("/api/authorizations/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteAuthorization(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting authorization:", error);
+      res.status(400).json({ message: "Failed to delete authorization" });
+    }
+  });
+
   // ========== Marketing Activity Routes (Calendar) ==========
   
   app.get("/api/marketing/activities/:year/:month", isAuthenticated, async (req, res) => {

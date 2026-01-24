@@ -182,6 +182,90 @@ export type InsertBudget = z.infer<typeof insertBudgetSchema>;
 export type Budget = typeof budgets.$inferSelect;
 
 // =============================================================================
+// MÓDULO: AUTORIZAÇÕES DE PUBLICAÇÃO
+// =============================================================================
+
+/**
+ * Tabela de Autorizações
+ * 
+ * Registra publicações autorizadas para clientes em jornais/veículos.
+ * Contém todos os dados de cliente, publicação e valores calculados.
+ * 
+ * Campos de valores:
+ * - valorUnitario: Valor por cm x col./linha
+ * - desconto: Percentual de desconto (0-100)
+ * - valorBruto: Valor sem desconto (valorUnitario × formato × inserções)
+ * - valorLiquido: Valor com desconto aplicado
+ * - valorTotal: Valor final (bruto + líquido conforme configuração)
+ * - diagramacao: Valor do serviço de design
+ */
+export const authorizations = pgTable("authorizations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Número da Autorização (gerado automaticamente)
+  authorizationNumber: integer("authorization_number").notNull().unique().default(sql`nextval('authorization_number_seq')`),
+  
+  // Dados do Cliente
+  cnpj: varchar("cnpj", { length: 18 }).notNull(),
+  clientName: text("client_name").notNull(),
+  clientAddress: text("client_address"),
+  clientCity: text("client_city"),
+  clientState: varchar("client_state", { length: 2 }),
+  clientZip: varchar("client_zip", { length: 10 }),
+  clientEmail: varchar("client_email"),
+  
+  // Dados da Publicação
+  jornal: text("jornal").notNull(), // Nome do jornal/veículo
+  tipo: varchar("tipo", { length: 50 }).notNull(), // Tipo de publicação (DOU, DOE, etc)
+  mes: varchar("mes", { length: 20 }).notNull(), // Mês da publicação
+  ano: varchar("ano", { length: 4 }).notNull(), // Ano da publicação
+  diasPublicacao: text("dias_publicacao").notNull(), // Dias (JSON array ou string "01-15", "16-31")
+  
+  // Formato e Inserções
+  colLinha: varchar("col_linha", { length: 20 }).notNull(), // Colunas/Linhas (ex: "4 col")
+  cm: varchar("cm", { length: 20 }).notNull(), // Centímetros (ex: "5 cm")
+  formato: text("formato"), // Formato combinado (ex: "4 col × 5 cm")
+  numInsercoes: integer("num_insercoes").notNull().default(1), // Número de inserções
+  
+  // Valores
+  valorUnitario: decimal("valor_unitario", { precision: 12, scale: 2 }).notNull(), // Valor por unidade
+  desconto: decimal("desconto", { precision: 5, scale: 2 }).default("0"), // Desconto em %
+  aplicarValorLiquido: boolean("aplicar_valor_liquido").default(false), // Se aplica valor líquido
+  valorBruto: decimal("valor_bruto", { precision: 12, scale: 2 }).notNull(), // Sem desconto
+  valorLiquido: decimal("valor_liquido", { precision: 12, scale: 2 }).notNull(), // Com desconto
+  valorTotal: decimal("valor_total", { precision: 12, scale: 2 }).notNull(), // Total final
+  diagramacao: decimal("diagramacao", { precision: 10, scale: 2 }).default("0"), // Serviço de design
+  
+  // Observações
+  observacoes: text("observacoes"),
+  
+  // Status
+  status: varchar("status", { length: 20 }).notNull().default("ativo"), // ativo, cancelado
+  
+  // Metadados
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const authorizationsRelations = relations(authorizations, ({ one }) => ({
+  creator: one(users, {
+    fields: [authorizations.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const insertAuthorizationSchema = createInsertSchema(authorizations).omit({
+  id: true,
+  authorizationNumber: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertAuthorization = z.infer<typeof insertAuthorizationSchema>;
+export type Authorization = typeof authorizations.$inferSelect;
+
+// =============================================================================
 // MÓDULO: CADASTRO DE CLIENTES (com integração Google Sheets)
 // =============================================================================
 

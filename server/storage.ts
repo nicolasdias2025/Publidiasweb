@@ -20,6 +20,7 @@ import {
   contentComments,
   contentTags,
   marketingMetrics,
+  authorizations,
   type User,
   type UpsertUser,
   type Budget,
@@ -48,6 +49,8 @@ import {
   type InsertContentTag,
   type MarketingMetric,
   type InsertMarketingMetric,
+  type Authorization,
+  type InsertAuthorization,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, gte, lte, like, ilike } from "drizzle-orm";
@@ -137,6 +140,13 @@ export interface IStorage {
   updateMarketingMetric(id: string, metric: Partial<InsertMarketingMetric>): Promise<MarketingMetric>;
   deleteMarketingMetric(id: string): Promise<void>;
   getMetricsByActivity(activityId: string): Promise<MarketingMetric[]>;
+  
+  // ========== Authorization Operations ==========
+  getAuthorizations(filters?: { dateFrom?: Date; dateTo?: Date; clientName?: string; jornal?: string }): Promise<Authorization[]>;
+  getAuthorization(id: string): Promise<Authorization | undefined>;
+  createAuthorization(authorization: InsertAuthorization): Promise<Authorization>;
+  updateAuthorization(id: string, authorization: Partial<InsertAuthorization>): Promise<Authorization>;
+  deleteAuthorization(id: string): Promise<void>;
 }
 
 /**
@@ -581,6 +591,57 @@ export class DatabaseStorage implements IStorage {
       .from(marketingMetrics)
       .where(eq(marketingMetrics.activityId, activityId))
       .orderBy(desc(marketingMetrics.date));
+  }
+  
+  // ========== Authorization Operations ==========
+  
+  async getAuthorizations(filters?: { dateFrom?: Date; dateTo?: Date; clientName?: string; jornal?: string }): Promise<Authorization[]> {
+    const conditions: any[] = [];
+    
+    if (filters?.dateFrom) {
+      conditions.push(gte(authorizations.createdAt, filters.dateFrom));
+    }
+    if (filters?.dateTo) {
+      conditions.push(lte(authorizations.createdAt, filters.dateTo));
+    }
+    if (filters?.clientName) {
+      conditions.push(ilike(authorizations.clientName, `%${filters.clientName}%`));
+    }
+    if (filters?.jornal) {
+      conditions.push(ilike(authorizations.jornal, `%${filters.jornal}%`));
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select()
+        .from(authorizations)
+        .where(and(...conditions))
+        .orderBy(desc(authorizations.createdAt));
+    }
+    
+    return await db.select().from(authorizations).orderBy(desc(authorizations.createdAt));
+  }
+  
+  async getAuthorization(id: string): Promise<Authorization | undefined> {
+    const [authorization] = await db.select().from(authorizations).where(eq(authorizations.id, id));
+    return authorization;
+  }
+  
+  async createAuthorization(authorizationData: InsertAuthorization): Promise<Authorization> {
+    const [authorization] = await db.insert(authorizations).values(authorizationData).returning();
+    return authorization;
+  }
+  
+  async updateAuthorization(id: string, authorizationData: Partial<InsertAuthorization>): Promise<Authorization> {
+    const [authorization] = await db
+      .update(authorizations)
+      .set({ ...authorizationData, updatedAt: new Date() })
+      .where(eq(authorizations.id, id))
+      .returning();
+    return authorization;
+  }
+  
+  async deleteAuthorization(id: string): Promise<void> {
+    await db.delete(authorizations).where(eq(authorizations.id, id));
   }
 }
 

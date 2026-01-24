@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,9 +11,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Loader2, Building2, Calendar } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FileText, Loader2, Building2, Calendar, Plus, Pencil, Trash2, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useClientLookup } from "@/hooks/useClientLookup";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Authorization } from "@shared/schema";
 
 const autorizacaoFormSchema = z.object({
   // Dados do Cliente
@@ -44,7 +49,14 @@ type AutorizacaoFormData = z.infer<typeof autorizacaoFormSchema>;
 
 export default function Autorizacoes() {
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Buscar autorizações existentes
+  const { data: authorizations = [], isLoading } = useQuery<Authorization[]>({
+    queryKey: ["/api/authorizations"],
+  });
 
   const form = useForm<AutorizacaoFormData>({
     resolver: zodResolver(autorizacaoFormSchema),
@@ -71,6 +83,90 @@ export default function Autorizacoes() {
       observacoes: "",
     },
   });
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("POST", "/api/authorizations", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/authorizations"] });
+      toast({ title: "Autorização criada!", description: "Registro salvo com sucesso." });
+      resetForm();
+      setIsDialogOpen(false);
+    },
+    onError: () => {
+      toast({ title: "Erro", description: "Falha ao criar autorização.", variant: "destructive" });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      return apiRequest("PATCH", `/api/authorizations/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/authorizations"] });
+      toast({ title: "Autorização atualizada!", description: "Alterações salvas com sucesso." });
+      resetForm();
+      setIsDialogOpen(false);
+    },
+    onError: () => {
+      toast({ title: "Erro", description: "Falha ao atualizar autorização.", variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("DELETE", `/api/authorizations/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/authorizations"] });
+      toast({ title: "Autorização excluída!", description: "Registro removido com sucesso." });
+    },
+    onError: () => {
+      toast({ title: "Erro", description: "Falha ao excluir autorização.", variant: "destructive" });
+    },
+  });
+
+  const resetForm = () => {
+    form.reset();
+    setSelectedDays([]);
+    setEditingId(null);
+  };
+
+  const openNewForm = () => {
+    resetForm();
+    setIsDialogOpen(true);
+  };
+
+  const openEditForm = (auth: Authorization) => {
+    const dias = auth.diasPublicacao ? JSON.parse(auth.diasPublicacao) : [];
+    setSelectedDays(dias);
+    form.reset({
+      cnpj: auth.cnpj || "",
+      clientName: auth.clientName || "",
+      clientAddress: auth.clientAddress || "",
+      clientCity: auth.clientCity || "",
+      clientState: auth.clientState || "",
+      clientZip: auth.clientZip || "",
+      clientEmail: auth.clientEmail || "",
+      jornal: auth.jornal || "",
+      tipo: auth.tipo || "",
+      mes: auth.mes || "",
+      ano: auth.ano || "",
+      diasPublicacao: dias,
+      colLinha: auth.colLinha || "",
+      cm: auth.cm || "",
+      valorUnitario: auth.valorUnitario || "",
+      desconto: auth.desconto || "0",
+      aplicarValorLiquido: auth.aplicarValorLiquido || false,
+      valorDiagramacao: auth.diagramacao || "0",
+      custoPublicacao: "0",
+      observacoes: auth.observacoes || "",
+    });
+    setEditingId(auth.id);
+    setIsDialogOpen(true);
+  };
 
   const watchedCnpj = form.watch("cnpj") || "";
   const { clientData, isLoading: loadingClient } = useClientLookup(watchedCnpj);
@@ -127,14 +223,51 @@ export default function Autorizacoes() {
   const valorLiquido = aplicarValorLiquido ? valorTotal * 0.8 : valorTotal;
 
   const onSubmit = (data: AutorizacaoFormData) => {
-    console.log("Dados da autorização:", data);
-    console.log("Valor Total calculado:", valorTotal);
-    console.log("Valor Líquido calculado:", valorLiquido);
-    
-    toast({
-      title: "PDF será gerado em breve",
-      description: "Funcionalidade de geração de PDF será implementada na próxima etapa.",
-    });
+    // Preparar dados para salvar
+    const authData = {
+      cnpj: data.cnpj,
+      clientName: data.clientName,
+      clientAddress: data.clientAddress,
+      clientCity: data.clientCity,
+      clientState: data.clientState,
+      clientZip: data.clientZip,
+      clientEmail: data.clientEmail || null,
+      jornal: data.jornal,
+      tipo: data.tipo,
+      mes: data.mes,
+      ano: data.ano,
+      diasPublicacao: JSON.stringify(selectedDays),
+      colLinha: data.colLinha,
+      cm: data.cm,
+      formato: `${data.colLinha} col × ${data.cm} cm`,
+      numInsercoes: numeroInsercoes,
+      valorUnitario: data.valorUnitario,
+      desconto: data.desconto || "0",
+      aplicarValorLiquido: data.aplicarValorLiquido,
+      valorBruto: subtotal.toFixed(2),
+      valorLiquido: valorLiquido.toFixed(2),
+      valorTotal: valorTotal.toFixed(2),
+      diagramacao: data.valorDiagramacao || "0",
+      observacoes: data.observacoes || null,
+    };
+
+    if (editingId) {
+      updateMutation.mutate({ id: editingId, data: authData });
+    } else {
+      createMutation.mutate(authData);
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Tem certeza que deseja excluir esta autorização?")) {
+      deleteMutation.mutate(id);
+    }
+  };
+
+  const formatCurrency = (value: string | number | null) => {
+    const num = typeof value === "string" ? parseFloat(value) : value;
+    if (!num && num !== 0) return "R$ 0,00";
+    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(num);
   };
 
   // Opções de meses e anos
@@ -156,15 +289,96 @@ export default function Autorizacoes() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Autorizações</h1>
           <p className="text-muted-foreground">Autorização de publicação em jornais oficiais</p>
         </div>
+        <Button onClick={openNewForm} className="gap-2" data-testid="button-nova-autorizacao">
+          <Plus className="h-4 w-4" />
+          Nova Autorização
+        </Button>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      {/* Lista de Autorizações */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Autorizações Cadastradas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : authorizations.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Nenhuma autorização cadastrada. Clique em "Nova Autorização" para começar.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nº</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Jornal</TableHead>
+                    <TableHead>Período</TableHead>
+                    <TableHead>Formato</TableHead>
+                    <TableHead className="text-right">Valor Bruto</TableHead>
+                    <TableHead className="text-right">Valor Líquido</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-center">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {authorizations.map((auth) => (
+                    <TableRow key={auth.id} data-testid={`row-auth-${auth.id}`}>
+                      <TableCell className="font-mono">{auth.authorizationNumber}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{auth.clientName}</TableCell>
+                      <TableCell className="max-w-[150px] truncate">{auth.jornal}</TableCell>
+                      <TableCell>{auth.mes}/{auth.ano}</TableCell>
+                      <TableCell>{auth.formato || `${auth.colLinha} × ${auth.cm}`}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(auth.valorBruto)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(auth.valorLiquido)}</TableCell>
+                      <TableCell className="text-right font-semibold">{formatCurrency(auth.valorTotal)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEditForm(auth)}
+                            data-testid={`button-edit-${auth.id}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(auth.id)}
+                            data-testid={`button-delete-${auth.id}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Dialog do Formulário */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingId ? "Editar Autorização" : "Nova Autorização"}</DialogTitle>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* SEÇÃO 1: DADOS DO CLIENTE */}
           <Card>
             <CardHeader>
@@ -606,23 +820,36 @@ export default function Autorizacoes() {
                   </FormItem>
                 )}
               />
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Botão Gerar PDF */}
-          <div className="flex justify-end">
-            <Button 
-              type="submit" 
-              size="lg" 
-              className="gap-2"
-              data-testid="button-gerar-pdf"
-            >
-              <FileText className="h-5 w-5" />
-              GERAR PDF
-            </Button>
-          </div>
-        </form>
-      </Form>
+              {/* Botões de Ação */}
+              <div className="flex justify-end gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => setIsDialogOpen(false)}
+                  data-testid="button-cancelar"
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="gap-2"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  data-testid="button-salvar"
+                >
+                  {(createMutation.isPending || updateMutation.isPending) && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                  <FileText className="h-5 w-5" />
+                  {editingId ? "Salvar Alterações" : "Salvar Autorização"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
