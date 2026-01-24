@@ -3,6 +3,7 @@ import type { Authorization } from '@shared/schema';
 import logoPublidias from '@assets/Logo-Ag-Aut_1769272910487.jpg';
 
 const PUBLIDIAS_DATA = {
+  razaoSocial: 'PUBLIDIAS SERVIÇOS DE PUBLICIDADE LTDA.',
   cnpj: '88.847.660/0001-53',
   endereco: 'Rua Patrício de Farias, 101/518 - Florianópolis/SC',
   fones: '(51) 99739.6914 - (51) 99578.2865 - (51) 99668.5967',
@@ -67,9 +68,6 @@ export async function generateAuthorizationPDF(auth: Authorization, logoBase64?:
   const contentWidth = pageWidth - 2 * margin;
   let y = 12;
 
-  const headerHeight = 26;
-  drawRoundedRect(doc, margin, y, contentWidth, headerHeight, 3, COLORS.white, COLORS.cardBorder);
-  
   const logoX = margin + 3;
   const logoY = y + 1;
   if (logoBase64) {
@@ -80,21 +78,32 @@ export async function generateAuthorizationPDF(auth: Authorization, logoBase64?:
     }
   }
   
-  const infoX = margin + 38;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(...COLORS.textMuted);
-  doc.text(PUBLIDIAS_DATA.endereco, infoX, y + 6);
-  doc.text(`Fones: ${PUBLIDIAS_DATA.fones}`, infoX, y + 10);
-  doc.text(`CNPJ: ${PUBLIDIAS_DATA.cnpj}`, infoX, y + 14);
-  doc.text(`E-mail: ${PUBLIDIAS_DATA.email}`, infoX, y + 18);
+  const titleX = pageWidth - margin - 4;
+  const infoStartX = margin + 40;
+  const infoEndX = titleX - 45;
+  const infoCenterX = infoStartX + (infoEndX - infoStartX) / 2;
   
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(...COLORS.primary);
-  doc.text(`Autorização nº ${auth.authorizationNumber}`, pageWidth - margin - 4, y + 13, { align: 'right' });
+  doc.setFontSize(7);
+  doc.setTextColor(...COLORS.text);
+  doc.text(PUBLIDIAS_DATA.razaoSocial, infoCenterX, y + 5, { align: 'center' });
   
-  y += headerHeight + 4;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(...COLORS.textMuted);
+  doc.text(PUBLIDIAS_DATA.endereco, infoCenterX, y + 9, { align: 'center' });
+  doc.text(`Fones: ${PUBLIDIAS_DATA.fones}`, infoCenterX, y + 13, { align: 'center' });
+  doc.text(`CNPJ: ${PUBLIDIAS_DATA.cnpj}`, infoCenterX, y + 17, { align: 'center' });
+  doc.text(`E-mail: ${PUBLIDIAS_DATA.email}`, infoCenterX, y + 21, { align: 'center' });
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...COLORS.primary);
+  doc.text('Autorização', titleX, y + 8, { align: 'right' });
+  doc.text('de Inserção', titleX, y + 13, { align: 'right' });
+  doc.text(`nº ${auth.authorizationNumber}`, titleX, y + 18, { align: 'right' });
+  
+  y += 28;
 
   const cardHeight1 = 38;
   drawRoundedRect(doc, margin, y, contentWidth, cardHeight1, 3, COLORS.cardBg, COLORS.cardBorder);
@@ -127,7 +136,9 @@ export async function generateAuthorizationPDF(auth: Authorization, logoBase64?:
   drawField('Razão Social', auth.clientName, col1, fieldY, contentWidth - innerPadding * 2);
   drawField('CNPJ', formatCNPJ(auth.cnpj), col1, fieldY + 9);
   drawField('E-mail', auth.clientEmail, col2, fieldY + 9);
-  drawField('Endereço', `${auth.clientAddress || ''} - ${auth.clientCity || ''}/${auth.clientState || ''} - ${auth.clientZip || ''}`, col1, fieldY + 18, contentWidth - innerPadding * 2);
+  
+  const enderecoCompleto = `${auth.clientAddress || ''} - ${auth.clientCity || ''}/${auth.clientState || ''} - CEP ${auth.clientZip || ''}`;
+  drawField('Endereço', enderecoCompleto, col1, fieldY + 18, contentWidth - innerPadding * 2);
   
   y += cardHeight1 + 4;
 
@@ -151,7 +162,7 @@ export async function generateAuthorizationPDF(auth: Authorization, logoBase64?:
   drawField('Jornal', auth.jornal, col1, pubY, col4Width - 4);
   drawField('Tipo', auth.tipo, col1 + col4Width, pubY, col4Width - 4);
   drawField('Período', `${auth.mes}/${auth.ano}`, col1 + col4Width * 2, pubY, col4Width - 4);
-  drawField('Dia da Publicação', diasText, col1 + col4Width * 3, pubY, col4Width - 4);
+  drawField('Dia(s) da Publicação', diasText, col1 + col4Width * 3, pubY, col4Width - 4);
   
   y += cardHeight2 + 4;
 
@@ -203,13 +214,8 @@ export async function generateAuthorizationPDF(auth: Authorization, logoBase64?:
   doc.setTextColor(...COLORS.text);
   doc.text(obsLines, col1, y + 12);
   
-  y += obsHeight + 8;
+  y += obsHeight + 10;
 
-  doc.setLineWidth(0.2);
-  doc.setDrawColor(...COLORS.cardBorder);
-  doc.line(margin, y, pageWidth - margin, y);
-  
-  y += 6;
   const dataEmissao = auth.createdAt 
     ? new Date(auth.createdAt).toLocaleDateString('pt-BR')
     : new Date().toLocaleDateString('pt-BR');
