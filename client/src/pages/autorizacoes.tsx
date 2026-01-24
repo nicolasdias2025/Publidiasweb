@@ -13,10 +13,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FileText, Loader2, Building2, Calendar, Plus, Pencil, Trash2, Eye } from "lucide-react";
+import { FileText, Loader2, Building2, Calendar, Plus, Pencil, Trash2, Eye, FileDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useClientLookup } from "@/hooks/useClientLookup";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { generateAuthorizationPDF, loadLogoAsBase64 } from "@/lib/generateAuthorizationPDF";
 import type { Authorization } from "@shared/schema";
 
 const autorizacaoFormSchema = z.object({
@@ -271,6 +272,18 @@ export default function Autorizacoes() {
     }
   };
 
+  const handleGeneratePDF = async (auth: Authorization) => {
+    try {
+      toast({ title: "Gerando PDF...", description: "Aguarde um momento." });
+      const logoBase64 = await loadLogoAsBase64();
+      await generateAuthorizationPDF(auth, logoBase64);
+      toast({ title: "PDF gerado!", description: `Autorização #${auth.authorizationNumber} salva com sucesso.` });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({ title: "Erro", description: "Falha ao gerar o PDF.", variant: "destructive" });
+    }
+  };
+
   const formatCurrency = (value: string | number | null) => {
     const num = typeof value === "string" ? parseFloat(value) : value;
     if (!num && num !== 0) return "R$ 0,00";
@@ -353,7 +366,17 @@ export default function Autorizacoes() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => handleGeneratePDF(auth)}
+                            title="Gerar PDF"
+                            data-testid={`button-pdf-${auth.id}`}
+                          >
+                            <FileDown className="h-4 w-4 text-primary" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => openEditForm(auth)}
+                            title="Editar"
                             data-testid={`button-edit-${auth.id}`}
                           >
                             <Pencil className="h-4 w-4" />
@@ -362,6 +385,7 @@ export default function Autorizacoes() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDelete(auth.id)}
+                            title="Excluir"
                             data-testid={`button-delete-${auth.id}`}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
