@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import type { Authorization } from '@shared/schema';
-import logoPublidias from '@assets/Logo-Ag-P&B-II_1769269593758.png';
+import logoPublidias from '@assets/Logo-Ag-Aut_1769272910487.jpg';
 
 const PUBLIDIAS_DATA = {
   cnpj: '88.847.660/0001-53',
@@ -45,13 +45,13 @@ function drawRoundedRect(doc: jsPDF, x: number, y: number, width: number, height
 
 function drawCardHeader(doc: jsPDF, title: string, x: number, y: number, width: number) {
   doc.setFillColor(...COLORS.primary);
-  doc.roundedRect(x, y, width, 8, 2, 2, 'F');
-  doc.rect(x, y + 4, width, 4, 'F');
+  doc.roundedRect(x, y, width, 7, 2, 2, 'F');
+  doc.rect(x, y + 3.5, width, 3.5, 'F');
   
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(...COLORS.white);
-  doc.text(title, x + 4, y + 5.5);
+  doc.text(title, x + 4, y + 5);
   doc.setTextColor(...COLORS.text);
 }
 
@@ -67,43 +67,41 @@ export async function generateAuthorizationPDF(auth: Authorization, logoBase64?:
   const contentWidth = pageWidth - 2 * margin;
   let y = 12;
 
-  drawRoundedRect(doc, margin, y, contentWidth, 32, 3, COLORS.white, COLORS.cardBorder);
+  const headerHeight = 26;
+  drawRoundedRect(doc, margin, y, contentWidth, headerHeight, 3, COLORS.white, COLORS.cardBorder);
   
-  const logoX = margin + 4;
-  const logoY = y + 4;
+  const logoX = margin + 3;
+  const logoY = y + 1;
   if (logoBase64) {
     try {
-      doc.addImage(logoBase64, 'PNG', logoX, logoY, 40, 18);
+      doc.addImage(logoBase64, 'JPEG', logoX, logoY, 32, 24);
     } catch (e) {
       console.warn('Não foi possível adicionar o logo:', e);
     }
   }
   
-  const infoX = margin + 50;
+  const infoX = margin + 38;
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setTextColor(...COLORS.textMuted);
-  doc.text(PUBLIDIAS_DATA.endereco, infoX, y + 8);
-  doc.text(`Fones: ${PUBLIDIAS_DATA.fones}`, infoX, y + 12);
-  doc.text(`CNPJ: ${PUBLIDIAS_DATA.cnpj}`, infoX, y + 16);
-  doc.text(`E-mail: ${PUBLIDIAS_DATA.email}`, infoX, y + 20);
+  doc.text(PUBLIDIAS_DATA.endereco, infoX, y + 6);
+  doc.text(`Fones: ${PUBLIDIAS_DATA.fones}`, infoX, y + 10);
+  doc.text(`CNPJ: ${PUBLIDIAS_DATA.cnpj}`, infoX, y + 14);
+  doc.text(`E-mail: ${PUBLIDIAS_DATA.email}`, infoX, y + 18);
   
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(13);
   doc.setTextColor(...COLORS.primary);
-  doc.text(`Autorização #${auth.authorizationNumber}`, pageWidth - margin - 4, y + 14, { align: 'right' });
+  doc.text(`Autorização nº ${auth.authorizationNumber}`, pageWidth - margin - 4, y + 13, { align: 'right' });
   
-  y += 38;
+  y += headerHeight + 4;
 
-  const cardHeight1 = 35;
+  const cardHeight1 = 38;
   drawRoundedRect(doc, margin, y, contentWidth, cardHeight1, 3, COLORS.cardBg, COLORS.cardBorder);
   drawCardHeader(doc, 'DADOS DO CLIENTE', margin, y, contentWidth);
   
   const innerPadding = 4;
-  const fieldY = y + 12;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...COLORS.text);
+  const fieldY = y + 11;
   
   const col1 = margin + innerPadding;
   const col2 = margin + contentWidth / 2;
@@ -112,34 +110,33 @@ export async function generateAuthorizationPDF(auth: Authorization, logoBase64?:
   const drawField = (label: string, value: string | null | undefined, x: number, yPos: number, maxW?: number) => {
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...COLORS.textMuted);
-    doc.setFontSize(7);
+    doc.setFontSize(6.5);
     doc.text(label, x, yPos);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...COLORS.text);
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     const textValue = value || '-';
     const maxWidth = maxW || colWidth - 4;
     if (doc.getTextWidth(textValue) > maxWidth) {
-      doc.text(textValue.substring(0, Math.floor(maxWidth / 2)) + '...', x, yPos + 4);
+      doc.text(textValue.substring(0, Math.floor(maxWidth / 2)) + '...', x, yPos + 3.5);
     } else {
-      doc.text(textValue, x, yPos + 4);
+      doc.text(textValue, x, yPos + 3.5);
     }
   };
   
   drawField('Razão Social', auth.clientName, col1, fieldY, contentWidth - innerPadding * 2);
-  drawField('CNPJ', formatCNPJ(auth.cnpj), col1, fieldY + 10);
-  drawField('E-mail', auth.clientEmail, col2, fieldY + 10);
-  drawField('Endereço', `${auth.clientAddress || ''} - ${auth.clientCity || ''}/${auth.clientState || ''} - ${auth.clientZip || ''}`, col1, fieldY + 20, contentWidth - innerPadding * 2);
+  drawField('CNPJ', formatCNPJ(auth.cnpj), col1, fieldY + 9);
+  drawField('E-mail', auth.clientEmail, col2, fieldY + 9);
+  drawField('Endereço', `${auth.clientAddress || ''} - ${auth.clientCity || ''}/${auth.clientState || ''} - ${auth.clientZip || ''}`, col1, fieldY + 18, contentWidth - innerPadding * 2);
   
-  y += cardHeight1 + 5;
+  y += cardHeight1 + 4;
 
-  const cardHeight2 = 30;
+  const cardHeight2 = 18;
   drawRoundedRect(doc, margin, y, contentWidth, cardHeight2, 3, COLORS.cardBg, COLORS.cardBorder);
   drawCardHeader(doc, 'DADOS DA PUBLICAÇÃO', margin, y, contentWidth);
   
-  const pubY = y + 12;
-  drawField('Jornal', auth.jornal, col1, pubY, contentWidth * 0.6);
-  drawField('Tipo', auth.tipo, col2, pubY);
+  const pubY = y + 11;
+  const col4Width = contentWidth / 4;
   
   let diasText = '-';
   try {
@@ -150,74 +147,75 @@ export async function generateAuthorizationPDF(auth: Authorization, logoBase64?:
   } catch {
     diasText = auth.diasPublicacao || '-';
   }
-  drawField('Período', `${auth.mes}/${auth.ano}`, col1, pubY + 10);
-  drawField('Dias de Publicação', diasText, col2, pubY + 10);
   
-  y += cardHeight2 + 5;
+  drawField('Jornal', auth.jornal, col1, pubY, col4Width - 4);
+  drawField('Tipo', auth.tipo, col1 + col4Width, pubY, col4Width - 4);
+  drawField('Período', `${auth.mes}/${auth.ano}`, col1 + col4Width * 2, pubY, col4Width - 4);
+  drawField('Dia da Publicação', diasText, col1 + col4Width * 3, pubY, col4Width - 4);
+  
+  y += cardHeight2 + 4;
 
-  const cardHeight3 = 25;
+  const cardHeight3 = 18;
   drawRoundedRect(doc, margin, y, contentWidth, cardHeight3, 3, COLORS.cardBg, COLORS.cardBorder);
   drawCardHeader(doc, 'FORMATO E INSERÇÕES', margin, y, contentWidth);
   
-  const formatY = y + 12;
-  const col3Width = contentWidth / 4;
-  drawField('Col./Linha', auth.colLinha, col1, formatY, col3Width - 4);
-  drawField('Cm', auth.cm, col1 + col3Width, formatY, col3Width - 4);
-  drawField('Formato', auth.formato || `${auth.colLinha} × ${auth.cm}`, col1 + col3Width * 2, formatY, col3Width - 4);
-  drawField('Nº Inserções', String(auth.numInsercoes || 1), col1 + col3Width * 3, formatY, col3Width - 4);
+  const formatY = y + 11;
+  drawField('Col./Linha', auth.colLinha, col1, formatY, col4Width - 4);
+  drawField('Cm', auth.cm, col1 + col4Width, formatY, col4Width - 4);
+  drawField('Formato', auth.formato || `${auth.colLinha} × ${auth.cm}`, col1 + col4Width * 2, formatY, col4Width - 4);
+  drawField('Nº Inserções', String(auth.numInsercoes || 1), col1 + col4Width * 3, formatY, col4Width - 4);
   
-  y += cardHeight3 + 5;
+  y += cardHeight3 + 4;
 
-  const cardHeight4 = auth.aplicarValorLiquido ? 35 : 28;
+  const cardHeight4 = 18;
   drawRoundedRect(doc, margin, y, contentWidth, cardHeight4, 3, COLORS.cardBg, COLORS.cardBorder);
   drawCardHeader(doc, 'VALORES', margin, y, contentWidth);
   
-  const valY = y + 12;
-  drawField('Valor Unitário', formatCurrency(auth.valorUnitario), col1, valY);
-  drawField('Valor Bruto', formatCurrency(auth.valorBruto), col2, valY);
-  
+  const valY = y + 11;
   const descontoValue = auth.desconto ? `${auth.desconto}%` : '0%';
-  drawField('Desconto', descontoValue, col1, valY + 10);
   
-  if (auth.aplicarValorLiquido) {
-    drawField('Valor Líquido (80%)', formatCurrency(auth.valorLiquido), col2, valY + 10);
-  }
+  const faturarValor = auth.aplicarValorLiquido ? auth.valorLiquido : auth.valorTotal;
+  
+  drawField('Valor col./linha × cm', formatCurrency(auth.valorUnitario), col1, valY, col4Width - 4);
+  drawField('Valor Bruto', formatCurrency(auth.valorBruto), col1 + col4Width, valY, col4Width - 4);
+  drawField('Desconto', descontoValue, col1 + col4Width * 2, valY, col4Width - 4);
   
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
+  doc.setTextColor(...COLORS.textMuted);
+  doc.setFontSize(6.5);
+  doc.text('Faturar Valor', col1 + col4Width * 3, valY);
+  doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.primary);
-  const totalY = auth.aplicarValorLiquido ? valY + 20 : valY + 10;
-  doc.text(`VALOR TOTAL: ${formatCurrency(auth.valorTotal)}`, col2, totalY + 4);
+  doc.setFontSize(9);
+  doc.text(formatCurrency(faturarValor), col1 + col4Width * 3, valY + 3.5);
   
-  y += cardHeight4 + 5;
+  y += cardHeight4 + 4;
 
-  if (auth.observacoes) {
-    const obsLines = doc.splitTextToSize(auth.observacoes, contentWidth - innerPadding * 2);
-    const obsHeight = 12 + obsLines.length * 4;
-    
-    drawRoundedRect(doc, margin, y, contentWidth, obsHeight, 3, COLORS.cardBg, COLORS.cardBorder);
-    drawCardHeader(doc, 'OBSERVAÇÕES', margin, y, contentWidth);
-    
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(...COLORS.text);
-    doc.text(obsLines, col1, y + 14);
-    
-    y += obsHeight + 5;
-  }
+  const obsText = auth.observacoes || '-';
+  const obsLines = doc.splitTextToSize(obsText, contentWidth - innerPadding * 2);
+  const obsHeight = Math.max(16, 11 + obsLines.length * 3.5);
+  
+  drawRoundedRect(doc, margin, y, contentWidth, obsHeight, 3, COLORS.cardBg, COLORS.cardBorder);
+  drawCardHeader(doc, 'OBSERVAÇÕES', margin, y, contentWidth);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...COLORS.text);
+  doc.text(obsLines, col1, y + 12);
+  
+  y += obsHeight + 8;
 
-  y += 10;
   doc.setLineWidth(0.2);
   doc.setDrawColor(...COLORS.cardBorder);
   doc.line(margin, y, pageWidth - margin, y);
   
-  y += 8;
+  y += 6;
   const dataEmissao = auth.createdAt 
     ? new Date(auth.createdAt).toLocaleDateString('pt-BR')
     : new Date().toLocaleDateString('pt-BR');
   
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setTextColor(...COLORS.textMuted);
   doc.text(`Data de emissão: ${dataEmissao}`, pageWidth / 2, y, { align: 'center' });
   
