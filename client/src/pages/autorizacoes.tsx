@@ -58,6 +58,12 @@ export default function Autorizacoes() {
     queryKey: ["/api/authorizations"],
   });
 
+  // Buscar próximo número de autorização
+  const { data: nextNumberData } = useQuery<{ nextNumber: number }>({
+    queryKey: ["/api/authorizations/next-number"],
+    enabled: isDialogOpen && !editingId,
+  });
+
   const form = useForm<AutorizacaoFormData>({
     resolver: zodResolver(autorizacaoFormSchema),
     defaultValues: {
@@ -91,6 +97,7 @@ export default function Autorizacoes() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/authorizations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/authorizations/next-number"] });
       toast({ title: "Autorização criada!", description: "Registro salvo com sucesso." });
       resetForm();
       setIsDialogOpen(false);
@@ -374,7 +381,12 @@ export default function Autorizacoes() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Editar Autorização" : "Nova Autorização"}</DialogTitle>
+            <DialogTitle>
+              {editingId 
+                ? `Editar Autorização #${authorizations.find(a => a.id === editingId)?.authorizationNumber || ''}`
+                : `Nova Autorização #${nextNumberData?.nextNumber || ''}`
+              }
+            </DialogTitle>
           </DialogHeader>
           
           <Form {...form}>

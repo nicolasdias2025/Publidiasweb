@@ -147,6 +147,7 @@ export interface IStorage {
   createAuthorization(authorization: InsertAuthorization): Promise<Authorization>;
   updateAuthorization(id: string, authorization: Partial<InsertAuthorization>): Promise<Authorization>;
   deleteAuthorization(id: string): Promise<void>;
+  getNextAuthorizationNumber(): Promise<number>;
 }
 
 /**
@@ -642,6 +643,18 @@ export class DatabaseStorage implements IStorage {
   
   async deleteAuthorization(id: string): Promise<void> {
     await db.delete(authorizations).where(eq(authorizations.id, id));
+  }
+  
+  async getNextAuthorizationNumber(): Promise<number> {
+    // Query the sequence to get the next value preview (without consuming it)
+    const result = await db.execute(sql`
+      SELECT COALESCE(
+        (SELECT last_value + 1 FROM authorization_number_seq WHERE is_called = true),
+        (SELECT last_value FROM authorization_number_seq WHERE is_called = false),
+        1
+      ) as next_number
+    `);
+    return Number((result.rows[0] as any)?.next_number || 1);
   }
 }
 

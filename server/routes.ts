@@ -522,6 +522,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ========== Authorization Routes ==========
   
+  // Retorna o próximo número de autorização disponível
+  app.get("/api/authorizations/next-number", isAuthenticated, async (req, res) => {
+    try {
+      const nextNumber = await storage.getNextAuthorizationNumber();
+      res.json({ nextNumber });
+    } catch (error) {
+      console.error("Error fetching next authorization number:", error);
+      res.status(500).json({ message: "Failed to fetch next authorization number" });
+    }
+  });
+  
   app.get("/api/authorizations", isAuthenticated, async (req, res) => {
     try {
       const { dateFrom, dateTo, clientName, jornal } = req.query;

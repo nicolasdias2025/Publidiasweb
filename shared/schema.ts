@@ -185,6 +185,12 @@ export type Budget = typeof budgets.$inferSelect;
 // MÓDULO: AUTORIZAÇÕES DE PUBLICAÇÃO
 // =============================================================================
 
+// Sequência para número da autorização
+export const authorizationNumberSeq = pgSequence("authorization_number_seq", {
+  startWith: 1,
+  increment: 1,
+});
+
 /**
  * Tabela de Autorizações
  * 
