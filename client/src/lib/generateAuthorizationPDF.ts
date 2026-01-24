@@ -160,7 +160,8 @@ export async function generateAuthorizationPDF(auth: Authorization, logoBase64?:
   }
   
   drawField('Jornal', auth.jornal, col1, pubY, col4Width - 4);
-  drawField('Tipo', auth.tipo, col1 + col4Width, pubY, col4Width - 4);
+  const tipoCapitalized = auth.tipo ? auth.tipo.charAt(0).toUpperCase() + auth.tipo.slice(1) : '-';
+  drawField('Tipo', tipoCapitalized, col1 + col4Width, pubY, col4Width - 4);
   drawField('Período', `${auth.mes}/${auth.ano}`, col1 + col4Width * 2, pubY, col4Width - 4);
   drawField('Dia(s) da Publicação', diasText, col1 + col4Width * 3, pubY, col4Width - 4);
   
@@ -194,7 +195,7 @@ export async function generateAuthorizationPDF(auth: Authorization, logoBase64?:
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.textMuted);
   doc.setFontSize(6.5);
-  doc.text('Faturar Valor', col1 + col4Width * 3, valY);
+  doc.text('FATURAR VALOR CLIENTE', col1 + col4Width * 3, valY);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.primary);
   doc.setFontSize(9);
@@ -225,7 +226,7 @@ export async function generateAuthorizationPDF(auth: Authorization, logoBase64?:
   doc.setTextColor(...COLORS.textMuted);
   doc.text(`Data de emissão: ${dataEmissao}`, pageWidth / 2, y, { align: 'center' });
   
-  const fileName = `Autorizacao_${auth.authorizationNumber}_${auth.clientName?.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20)}.pdf`;
+  const fileName = `Aut._${auth.authorizationNumber}.pdf`;
   doc.save(fileName);
 }
 
