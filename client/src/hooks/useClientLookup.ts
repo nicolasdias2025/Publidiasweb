@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { getAuthToken } from '@/lib/queryClient';
 
 interface ClientData {
   cnpj: string;
@@ -20,6 +21,14 @@ interface LookupResponse {
   success: boolean;
   data: ClientData | null;
   message?: string;
+}
+
+function getAuthHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  if (token) {
+    return { Authorization: `Bearer ${token}` };
+  }
+  return {};
 }
 
 export function useClientLookup(cnpj: string) {
@@ -39,11 +48,14 @@ export function useClientLookup(cnpj: string) {
     return () => clearTimeout(timer);
   }, [cnpj]);
 
+  // Only enable query if we have a valid CNPJ and auth token
+  const hasAuthToken = !!getAuthToken();
+
   const { data, isLoading, error, isError } = useQuery<LookupResponse>({
     queryKey: ['/api/clients/lookup-by-cnpj', debouncedCnpj],
     queryFn: async () => {
       const response = await fetch(`/api/clients/lookup-by-cnpj?cnpj=${debouncedCnpj}`, {
-        credentials: 'include',
+        headers: getAuthHeaders(),
       });
       
       if (!response.ok) {
@@ -53,7 +65,7 @@ export function useClientLookup(cnpj: string) {
       
       return response.json();
     },
-    enabled: debouncedCnpj.length === 14,
+    enabled: debouncedCnpj.length === 14 && hasAuthToken,
     retry: false,
     staleTime: 60000,
   });
