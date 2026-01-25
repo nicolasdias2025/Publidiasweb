@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -83,6 +84,11 @@ const invoiceFormSchema = z.object({
   dueDate: z.string(),
   paymentDate: z.string().optional().or(z.literal("")),
   status: z.enum(["pending", "overdue", "paid", "replaced"]),
+  retencaoCsll: z.boolean().default(false),
+  retencaoCofins: z.boolean().default(false),
+  retencaoIssqn: z.boolean().default(false),
+  retencaoIr: z.boolean().default(false),
+  retencaoPisPasep: z.boolean().default(false),
   comments: z.string().max(500, "Comentários não podem exceder 500 caracteres").optional().or(z.literal("")),
 }).refine(
   (data) => {
@@ -151,6 +157,11 @@ export default function NotasFiscais() {
       dueDate: new Date().toISOString().split('T')[0],
       paymentDate: "",
       status: "pending",
+      retencaoCsll: false,
+      retencaoCofins: false,
+      retencaoIssqn: false,
+      retencaoIr: false,
+      retencaoPisPasep: false,
       comments: "",
     },
   });
@@ -254,6 +265,11 @@ export default function NotasFiscais() {
       dueDate: new Date().toISOString().split('T')[0],
       paymentDate: "",
       status: "pending",
+      retencaoCsll: false,
+      retencaoCofins: false,
+      retencaoIssqn: false,
+      retencaoIr: false,
+      retencaoPisPasep: false,
       comments: "",
     });
   };
@@ -272,6 +288,11 @@ export default function NotasFiscais() {
       dueDate: new Date(invoice.dueDate).toISOString().split('T')[0],
       paymentDate: invoice.paymentDate ? new Date(invoice.paymentDate).toISOString().split('T')[0] : "",
       status: invoice.status as any,
+      retencaoCsll: invoice.retencaoCsll ?? false,
+      retencaoCofins: invoice.retencaoCofins ?? false,
+      retencaoIssqn: invoice.retencaoIssqn ?? false,
+      retencaoIr: invoice.retencaoIr ?? false,
+      retencaoPisPasep: invoice.retencaoPisPasep ?? false,
       comments: invoice.comments || "",
     });
   };
@@ -753,6 +774,93 @@ export default function NotasFiscais() {
                     </FormItem>
                   )}
                 />
+              </div>
+
+              {/* Retenções */}
+              <div className="space-y-2">
+                <FormLabel>Retenções</FormLabel>
+                <div className="flex flex-wrap gap-4">
+                  <FormField
+                    control={form.control}
+                    name="retencaoCsll"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-csll"
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal cursor-pointer">CSLL</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="retencaoCofins"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-cofins"
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal cursor-pointer">COFINS</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="retencaoIssqn"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-issqn"
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal cursor-pointer">ISSQN</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="retencaoIr"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-ir"
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal cursor-pointer">IR</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="retencaoPisPasep"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-pis-pasep"
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal cursor-pointer">PIS/PASEP</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
               {/* Grid com 3 colunas para datas */}

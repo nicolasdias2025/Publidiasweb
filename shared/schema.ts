@@ -375,6 +375,13 @@ export const invoices = pgTable("invoices", {
   // Status (pending, overdue, paid, replaced)
   status: varchar("status", { length: 20 }).notNull().default("pending"),
   
+  // Retenções (checkboxes)
+  retencaoCsll: boolean("retencao_csll").default(false),
+  retencaoCofins: boolean("retencao_cofins").default(false),
+  retencaoIssqn: boolean("retencao_issqn").default(false),
+  retencaoIr: boolean("retencao_ir").default(false),
+  retencaoPisPasep: boolean("retencao_pis_pasep").default(false),
+  
   // Comentários (opcional, max 500 chars)
   comments: text("comments"),
   
@@ -409,6 +416,11 @@ export const insertInvoiceSchema = createInsertSchema(invoices)
     dueDate: z.coerce.date(),
     paymentDate: z.coerce.date().optional().nullable(),
     status: z.enum(["pending", "overdue", "paid", "replaced"]).default("pending"),
+    retencaoCsll: z.boolean().default(false),
+    retencaoCofins: z.boolean().default(false),
+    retencaoIssqn: z.boolean().default(false),
+    retencaoIr: z.boolean().default(false),
+    retencaoPisPasep: z.boolean().default(false),
     comments: z.string().max(500, "Comentários não podem exceder 500 caracteres").optional().nullable().or(z.literal("")),
   })
   .refine(
@@ -459,6 +471,11 @@ export const updateInvoiceSchema = z.object({
   dueDate: z.coerce.date().optional(),
   paymentDate: z.coerce.date().optional().nullable(),
   status: z.enum(["pending", "overdue", "paid", "replaced"]).optional(),
+  retencaoCsll: z.boolean().optional(),
+  retencaoCofins: z.boolean().optional(),
+  retencaoIssqn: z.boolean().optional(),
+  retencaoIr: z.boolean().optional(),
+  retencaoPisPasep: z.boolean().optional(),
   comments: z.string().max(500, "Comentários não podem exceder 500 caracteres").optional().nullable().or(z.literal("")).optional(),
 }).superRefine((data, ctx) => {
   // Valida dueDate >= emissionDate apenas se ambos estiverem presentes
