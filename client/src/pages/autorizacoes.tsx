@@ -227,8 +227,8 @@ export default function Autorizacoes() {
   // Valor Total = subtotal - desconto percentual
   const valorTotal = subtotal - valorDesconto;
   
-  // Valor Líquido = Valor Total × 0.8 (se checkbox marcado)
-  const valorLiquido = aplicarValorLiquido ? valorTotal * 0.8 : valorTotal;
+  // Valor Líquido = Valor Total × 0.8 (apenas se checkbox marcado, senão fica zerado)
+  const valorLiquido = aplicarValorLiquido ? valorTotal * 0.8 : 0;
 
   const onSubmit = (data: AutorizacaoFormData) => {
     // Preparar dados para salvar
