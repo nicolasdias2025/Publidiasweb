@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ChevronDown, ChevronRight, FileText, Users, Newspaper, Download, Filter, X, Calendar, Search } from "lucide-react";
+import { Loader2, ChevronDown, ChevronRight, FileText, Users, Newspaper, Download, Filter, X, Calendar, Search, Copy } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import type { Authorization, Invoice } from "@shared/schema";
 
 interface FilterState {
@@ -592,9 +593,35 @@ function GestaoFaturamento() {
     status: "",
   });
 
+  const { toast } = useToast();
+
   const { data: invoices = [], isLoading } = useQuery<Invoice[]>({
     queryKey: ["/api/invoices"],
   });
+
+  const copyEmailToClipboard = async (email: string | null | undefined) => {
+    if (!email) {
+      toast({
+        title: "E-mail não disponível",
+        description: "Esta nota fiscal não possui e-mail cadastrado.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(email);
+      toast({
+        title: "E-mail copiado!",
+        description: email,
+      });
+    } catch (err) {
+      toast({
+        title: "Erro ao copiar",
+        description: "Não foi possível copiar o e-mail.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const filteredInvoices = useMemo(() => {
     let filtered = [...invoices];
@@ -882,7 +909,22 @@ function GestaoFaturamento() {
                 filteredInvoices.map((invoice) => (
                   <TableRow key={invoice.id} data-testid={`row-invoice-${invoice.id}`}>
                     <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                    <TableCell>{invoice.clientName}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span>{invoice.clientName}</span>
+                        {(invoice.status === "pending" || invoice.status === "overdue") && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => copyEmailToClipboard(invoice.clientEmail)}
+                            title={invoice.clientEmail ? `Copiar: ${invoice.clientEmail}` : "E-mail não cadastrado"}
+                            data-testid={`button-copy-email-${invoice.id}`}
+                          >
+                            <Copy className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>{invoice.serviceType}</TableCell>
                     <TableCell className="text-right font-mono">
                       {formatCurrency(invoice.value)}
