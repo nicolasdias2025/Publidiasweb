@@ -72,7 +72,8 @@ const invoiceFormSchema = z.object({
   cnpj: z.string().regex(/^\d{14}$|^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, "CNPJ inválido"),
   clientName: z.string().min(1, "Razão social é obrigatória"),
   clientEmail: z.string().email("E-mail inválido").optional().or(z.literal("")),
-  serviceType: z.enum(["DOU", "DOE", "Diagramação", "Comissão", "Outros"]),
+  serviceType: z.enum(["Publicação DOU", "Publicação DOE", "Publicação DOU + DOE", "Diagramação", "Comissão Veículo", "Outros"]),
+  customServiceType: z.string().optional(),
   value: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Valor deve ser maior que zero"),
   emissionDate: z.string().refine((val) => {
     const date = new Date(val);
@@ -113,6 +114,17 @@ const invoiceFormSchema = z.object({
     message: "Data de pagamento é obrigatória para notas fiscais pagas",
     path: ["paymentDate"],
   }
+).refine(
+  (data) => {
+    if (data.serviceType === "Outros") {
+      return !!data.customServiceType && data.customServiceType.trim() !== "";
+    }
+    return true;
+  },
+  {
+    message: "Por favor, especifique o tipo de serviço",
+    path: ["customServiceType"],
+  }
 );
 
 type InvoiceFormData = z.infer<typeof invoiceFormSchema>;
@@ -145,7 +157,8 @@ export default function NotasFiscais() {
       cnpj: "",
       clientName: "",
       clientEmail: "",
-      serviceType: "DOU",
+      serviceType: "Publicação DOU",
+      customServiceType: "",
       value: "",
       emissionDate: new Date().toISOString().split('T')[0],
       dueDate: new Date().toISOString().split('T')[0],
@@ -157,6 +170,7 @@ export default function NotasFiscais() {
 
   const watchedCnpj = form.watch("cnpj") || "";
   const watchedStatus = form.watch("status");
+  const watchedServiceType = form.watch("serviceType");
   const { clientData, isLoading: loadingLookup } = useClientLookup(watchedCnpj);
 
   // Autopreencher cliente quando CNPJ é encontrado
@@ -248,7 +262,8 @@ export default function NotasFiscais() {
       cnpj: "",
       clientName: "",
       clientEmail: "",
-      serviceType: "DOU",
+      serviceType: "Publicação DOU",
+      customServiceType: "",
       value: "",
       emissionDate: new Date().toISOString().split('T')[0],
       dueDate: new Date().toISOString().split('T')[0],
@@ -260,12 +275,20 @@ export default function NotasFiscais() {
 
   const handleEdit = (invoice: Invoice) => {
     setEditingInvoice(invoice);
+    
+    // Lista de tipos de serviço predefinidos
+    const predefinedTypes = ["Publicação DOU", "Publicação DOE", "Publicação DOU + DOE", "Diagramação", "Comissão Veículo", "Outros"];
+    
+    // Detectar se é um valor customizado (não está na lista predefinida)
+    const isCustomType = !predefinedTypes.includes(invoice.serviceType);
+    
     form.reset({
       invoiceNumber: invoice.invoiceNumber,
       cnpj: invoice.cnpj,
       clientName: invoice.clientName,
       clientEmail: invoice.clientEmail || "",
-      serviceType: invoice.serviceType as any,
+      serviceType: isCustomType ? "Outros" : invoice.serviceType as any,
+      customServiceType: isCustomType ? invoice.serviceType : "",
       value: invoice.value,
       emissionDate: new Date(invoice.emissionDate).toISOString().split('T')[0],
       dueDate: new Date(invoice.dueDate).toISOString().split('T')[0],
@@ -276,13 +299,22 @@ export default function NotasFiscais() {
   };
 
   const handleSubmit = (data: InvoiceFormData) => {
+    // Se serviceType for "Outros", usar o valor de customServiceType
+    const finalServiceType = data.serviceType === "Outros" && data.customServiceType
+      ? data.customServiceType
+      : data.serviceType;
+    
     // Transforma string vazia em null para campos opcionais de data
     const cleanedData = {
       ...data,
+      serviceType: finalServiceType,
       paymentDate: data.paymentDate === "" ? null : data.paymentDate,
       clientEmail: data.clientEmail === "" ? null : data.clientEmail,
       comments: data.comments === "" ? null : data.comments,
     };
+    
+    // Remove customServiceType do objeto antes de enviar
+    delete (cleanedData as any).customServiceType;
     
     if (editingInvoice) {
       updateMutation.mutate({ id: editingInvoice.id, data: cleanedData as any });
@@ -723,17 +755,39 @@ export default function NotasFiscais() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent position="popper" sideOffset={4}>
-                          <SelectItem value="DOU">DOU</SelectItem>
-                          <SelectItem value="DOE">DOE</SelectItem>
+                          <SelectItem value="Publicação DOU">Publicação DOU</SelectItem>
+                          <SelectItem value="Publicação DOE">Publicação DOE</SelectItem>
+                          <SelectItem value="Publicação DOU + DOE">Publicação DOU + DOE</SelectItem>
                           <SelectItem value="Diagramação">Diagramação</SelectItem>
-                          <SelectItem value="Comissão">Comissão</SelectItem>
-                          <SelectItem value="Outros">Outros</SelectItem>
+                          <SelectItem value="Comissão Veículo">Comissão Veículo</SelectItem>
+                          <SelectItem value="Outros">Outros (digitar)</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {/* Campo de texto para tipo de serviço personalizado */}
+                {watchedServiceType === "Outros" && (
+                  <FormField
+                    control={form.control}
+                    name="customServiceType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Especifique o Serviço</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Digite o tipo de serviço..."
+                            data-testid="input-custom-service-type"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 {/* Valor */}
                 <FormField

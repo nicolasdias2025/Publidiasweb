@@ -403,9 +403,7 @@ export const insertInvoiceSchema = createInsertSchema(invoices)
     cnpj: z.string().regex(/^\d{14}$|^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, "CNPJ inválido"),
     clientName: z.string().min(1, "Razão social é obrigatória"),
     clientEmail: z.string().email("E-mail inválido").optional().nullable().or(z.literal("")),
-    serviceType: z.enum(["DOU", "DOE", "Diagramação", "Comissão", "Outros"], {
-      errorMap: () => ({ message: "Tipo de serviço inválido" })
-    }),
+    serviceType: z.string().min(1, "Tipo de serviço é obrigatório"),
     value: z.string().refine((val) => parseFloat(val) > 0, "Valor deve ser maior que zero"),
     emissionDate: z.coerce.date(),
     dueDate: z.coerce.date(),
@@ -455,9 +453,7 @@ export const updateInvoiceSchema = z.object({
   cnpj: z.string().regex(/^\d{14}$|^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, "CNPJ inválido").optional(),
   clientName: z.string().min(1, "Razão social é obrigatória").optional(),
   clientEmail: z.string().email("E-mail inválido").optional().nullable().or(z.literal("")).optional(),
-  serviceType: z.enum(["DOU", "DOE", "Diagramação", "Comissão", "Outros"], {
-    errorMap: () => ({ message: "Tipo de serviço inválido" })
-  }).optional(),
+  serviceType: z.string().min(1, "Tipo de serviço é obrigatório").optional(),
   value: z.string().refine((val) => parseFloat(val) > 0, "Valor deve ser maior que zero").optional(),
   emissionDate: z.coerce.date().optional(),
   dueDate: z.coerce.date().optional(),
