@@ -360,7 +360,7 @@ export default function Autorizacoes() {
                       <TableCell>{auth.formato || `${auth.colLinha} × ${auth.cm}`}</TableCell>
                       <TableCell className="text-right">{formatCurrency(auth.valorBruto)}</TableCell>
                       <TableCell className="text-right">{formatCurrency(auth.valorLiquido)}</TableCell>
-                      <TableCell className="text-right font-semibold">{formatCurrency(auth.valorTotal)}</TableCell>
+                      <TableCell className="text-right font-semibold">{formatCurrency(auth.aplicarValorLiquido ? auth.valorLiquido : auth.valorTotal)}</TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-1">
                           <Button
