@@ -710,28 +710,27 @@ export default function NotasFiscais() {
 
               {/* Grid com 2 colunas */}
               <div className="grid gap-4 sm:grid-cols-2">
-                {/* Tipo de Serviço - Input com datalist para permitir digitação livre */}
+                {/* Tipo de Serviço */}
                 <FormField
                   control={form.control}
                   name="serviceType"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo de Serviço *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          list="service-types"
-                          placeholder="Selecione ou digite..."
-                          data-testid="input-service-type"
-                        />
-                      </FormControl>
-                      <datalist id="service-types">
-                        <option value="Publicação DOU" />
-                        <option value="Publicação DOE" />
-                        <option value="Publicação DOU + DOE" />
-                        <option value="Diagramação" />
-                        <option value="Comissão Veículo" />
-                      </datalist>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-service-type">
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent position="popper" sideOffset={4}>
+                          <SelectItem value="Publicação DOU">Publicação DOU</SelectItem>
+                          <SelectItem value="Publicação DOE">Publicação DOE</SelectItem>
+                          <SelectItem value="Publicação DOU + DOE">Publicação DOU + DOE</SelectItem>
+                          <SelectItem value="Diagramação">Diagramação</SelectItem>
+                          <SelectItem value="Comissão Veículo">Comissão Veículo</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
