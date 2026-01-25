@@ -537,7 +537,6 @@ export default function NotasFiscais() {
                   <tr className="text-left text-sm">
                     <th className="pb-3 font-semibold">Nº Nota</th>
                     <th className="pb-3 font-semibold">Cliente</th>
-                    <th className="pb-3 font-semibold">CNPJ</th>
                     <th className="pb-3 font-semibold">Tipo</th>
                     <th className="pb-3 font-semibold">Valor</th>
                     <th className="pb-3 font-semibold">Emissão</th>
@@ -555,9 +554,6 @@ export default function NotasFiscais() {
                         </td>
                         <td className="py-4" data-testid={`text-client-name-${invoice.id}`}>
                           {invoice.clientName}
-                        </td>
-                        <td className="py-4 font-mono text-sm" data-testid={`text-cnpj-${invoice.id}`}>
-                          {invoice.cnpj}
                         </td>
                         <td className="py-4" data-testid={`text-service-type-${invoice.id}`}>
                           {invoice.serviceType}
