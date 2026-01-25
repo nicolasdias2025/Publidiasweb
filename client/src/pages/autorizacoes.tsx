@@ -760,7 +760,7 @@ export default function Autorizacoes() {
                   </div>
 
                   <div>
-                    <FormLabel>Valor Total (R$)</FormLabel>
+                    <FormLabel>Valor Bruto (R$)</FormLabel>
                     <Input 
                       value={valorTotal.toFixed(2)} 
                       readOnly 
