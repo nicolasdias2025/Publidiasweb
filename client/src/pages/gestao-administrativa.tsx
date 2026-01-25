@@ -437,6 +437,7 @@ function GestaoPublicacoes() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-10"></TableHead>
+                      <TableHead>Aut._nº</TableHead>
                       <TableHead>Cliente</TableHead>
                       <TableHead className="text-right">Valor Total</TableHead>
                       <TableHead className="text-right">Valor Bruto</TableHead>
@@ -460,6 +461,7 @@ function GestaoPublicacoes() {
                               <ChevronRight className="h-4 w-4" />
                             )}
                           </TableCell>
+                          <TableCell></TableCell>
                           <TableCell className="font-medium">{grupo.clientName}</TableCell>
                           <TableCell className="text-right font-semibold">{formatCurrency(grupo.valorTotal)}</TableCell>
                           <TableCell className="text-right">{formatCurrency(grupo.valorBruto)}</TableCell>
@@ -472,6 +474,7 @@ function GestaoPublicacoes() {
                         {expandedRows.has(grupo.clientName) && grupo.items.map((item) => (
                           <TableRow key={item.id} className="bg-muted/50">
                             <TableCell></TableCell>
+                            <TableCell className="font-mono text-sm">{item.authorizationNumber}</TableCell>
                             <TableCell className="pl-8 text-sm">
                               {item.jornal} - {item.mes}/{item.ano}
                             </TableCell>
