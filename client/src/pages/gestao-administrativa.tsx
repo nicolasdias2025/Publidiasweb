@@ -20,6 +20,8 @@ interface FilterState {
   dataFim: string;
   cliente: string;
   jornal: string;
+  diagramacaoMin: string;
+  diagramacaoMax: string;
 }
 
 function GestaoPublicacoes() {
@@ -31,6 +33,8 @@ function GestaoPublicacoes() {
     dataFim: "",
     cliente: "",
     jornal: "",
+    diagramacaoMin: "",
+    diagramacaoMax: "",
   });
   const [appliedFilters, setAppliedFilters] = useState<FilterState>({
     periodo: "mes",
@@ -38,6 +42,8 @@ function GestaoPublicacoes() {
     dataFim: "",
     cliente: "",
     jornal: "",
+    diagramacaoMin: "",
+    diagramacaoMax: "",
   });
 
   // Buscar autorizações
@@ -86,6 +92,20 @@ function GestaoPublicacoes() {
       filtered = filtered.filter(a => 
         a.jornal.toLowerCase().includes(appliedFilters.jornal.toLowerCase())
       );
+    }
+
+    // Filtro por diagramação (intervalo de valor)
+    if (appliedFilters.diagramacaoMin) {
+      const min = parseFloat(appliedFilters.diagramacaoMin.replace(",", "."));
+      if (!isNaN(min)) {
+        filtered = filtered.filter(a => parseFloat(a.diagramacao || "0") >= min);
+      }
+    }
+    if (appliedFilters.diagramacaoMax) {
+      const max = parseFloat(appliedFilters.diagramacaoMax.replace(",", "."));
+      if (!isNaN(max)) {
+        filtered = filtered.filter(a => parseFloat(a.diagramacao || "0") <= max);
+      }
     }
     
     return filtered;
@@ -192,7 +212,15 @@ function GestaoPublicacoes() {
   };
 
   const clearFilters = () => {
-    const defaultFilters = { periodo: "mes", dataInicio: "", dataFim: "", cliente: "", jornal: "" };
+    const defaultFilters: FilterState = { 
+      periodo: "mes", 
+      dataInicio: "", 
+      dataFim: "", 
+      cliente: "", 
+      jornal: "",
+      diagramacaoMin: "",
+      diagramacaoMax: "",
+    };
     setFilters(defaultFilters);
     setAppliedFilters(defaultFilters);
   };
@@ -351,6 +379,26 @@ function GestaoPublicacoes() {
                 value={filters.jornal}
                 onChange={(e) => setFilters(f => ({ ...f, jornal: e.target.value }))}
                 data-testid="input-filtro-jornal"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Diagramação (Mín)</Label>
+              <Input 
+                placeholder="Ex: 100,00"
+                value={filters.diagramacaoMin}
+                onChange={(e) => setFilters(f => ({ ...f, diagramacaoMin: e.target.value }))}
+                data-testid="input-filtro-diagramacao-min"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Diagramação (Máx)</Label>
+              <Input 
+                placeholder="Ex: 500,00"
+                value={filters.diagramacaoMax}
+                onChange={(e) => setFilters(f => ({ ...f, diagramacaoMax: e.target.value }))}
+                data-testid="input-filtro-diagramacao-max"
               />
             </div>
           </div>
