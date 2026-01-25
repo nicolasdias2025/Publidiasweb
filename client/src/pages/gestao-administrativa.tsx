@@ -671,11 +671,17 @@ function GestaoFaturamento() {
 
   const hasActiveFilters = Object.values(appliedFilters).some(v => v !== "");
 
-  const formatCurrency = (value: string) => {
+  // Calcula o valor total das notas fiscais filtradas
+  const valorTotal = useMemo(() => {
+    return filteredInvoices.reduce((acc, inv) => acc + parseFloat(inv.value), 0);
+  }, [filteredInvoices]);
+
+  const formatCurrency = (value: string | number) => {
+    const numValue = typeof value === "string" ? parseFloat(value) : value;
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(parseFloat(value));
+    }).format(numValue);
   };
 
   const formatDate = (date: Date | string) => {
@@ -892,6 +898,18 @@ function GestaoFaturamento() {
               )}
             </TableBody>
           </Table>
+        </CardContent>
+      </Card>
+
+      {/* Card Valor Total */}
+      <Card>
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-semibold">VALOR TOTAL</span>
+            <span className="text-2xl font-bold text-primary font-mono" data-testid="valor-total">
+              {formatCurrency(valorTotal)}
+            </span>
+          </div>
         </CardContent>
       </Card>
     </div>
