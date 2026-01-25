@@ -22,6 +22,7 @@ interface FilterState {
   jornal: string;
   diagramacaoMin: string;
   diagramacaoMax: string;
+  autorizacaoNumero: string;
 }
 
 function GestaoPublicacoes() {
@@ -35,6 +36,7 @@ function GestaoPublicacoes() {
     jornal: "",
     diagramacaoMin: "",
     diagramacaoMax: "",
+    autorizacaoNumero: "",
   });
   const [appliedFilters, setAppliedFilters] = useState<FilterState>({
     periodo: "mes",
@@ -44,6 +46,7 @@ function GestaoPublicacoes() {
     jornal: "",
     diagramacaoMin: "",
     diagramacaoMax: "",
+    autorizacaoNumero: "",
   });
 
   // Buscar autorizações
@@ -106,6 +109,13 @@ function GestaoPublicacoes() {
       if (!isNaN(max)) {
         filtered = filtered.filter(a => parseFloat(a.diagramacao || "0") <= max);
       }
+    }
+
+    // Filtro por número de autorização
+    if (appliedFilters.autorizacaoNumero) {
+      filtered = filtered.filter(a => 
+        String(a.authorizationNumber || "").toLowerCase().includes(appliedFilters.autorizacaoNumero.toLowerCase())
+      );
     }
     
     return filtered;
@@ -220,6 +230,7 @@ function GestaoPublicacoes() {
       jornal: "",
       diagramacaoMin: "",
       diagramacaoMax: "",
+      autorizacaoNumero: "",
     };
     setFilters(defaultFilters);
     setAppliedFilters(defaultFilters);
@@ -399,6 +410,16 @@ function GestaoPublicacoes() {
                 value={filters.diagramacaoMax}
                 onChange={(e) => setFilters(f => ({ ...f, diagramacaoMax: e.target.value }))}
                 data-testid="input-filtro-diagramacao-max"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Nº Autorização</Label>
+              <Input 
+                placeholder="Ex: AUT-001"
+                value={filters.autorizacaoNumero}
+                onChange={(e) => setFilters(f => ({ ...f, autorizacaoNumero: e.target.value }))}
+                data-testid="input-filtro-autorizacao"
               />
             </div>
           </div>
