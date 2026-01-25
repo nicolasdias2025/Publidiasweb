@@ -10,8 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ChevronDown, ChevronRight, FileText, Users, Newspaper, Download, Filter, X, Calendar } from "lucide-react";
-import type { Authorization } from "@shared/schema";
+import { Loader2, ChevronDown, ChevronRight, FileText, Users, Newspaper, Download, Filter, X, Calendar, Search } from "lucide-react";
+import type { Authorization, Invoice } from "@shared/schema";
 
 interface FilterState {
   periodo: string;
@@ -562,8 +562,340 @@ function GestaoPublicacoes() {
   );
 }
 
+interface FaturamentoFilterState {
+  dataEmissaoInicio: string;
+  dataEmissaoFim: string;
+  cliente: string;
+  valor: string;
+  nfeNumber: string;
+  vencimento: string;
+  status: string;
+}
+
 function GestaoFaturamento() {
-  return <div data-testid="page-gestao-faturamento"></div>;
+  const [filters, setFilters] = useState<FaturamentoFilterState>({
+    dataEmissaoInicio: "",
+    dataEmissaoFim: "",
+    cliente: "",
+    valor: "",
+    nfeNumber: "",
+    vencimento: "",
+    status: "",
+  });
+  const [appliedFilters, setAppliedFilters] = useState<FaturamentoFilterState>({
+    dataEmissaoInicio: "",
+    dataEmissaoFim: "",
+    cliente: "",
+    valor: "",
+    nfeNumber: "",
+    vencimento: "",
+    status: "",
+  });
+
+  const { data: invoices = [], isLoading } = useQuery<Invoice[]>({
+    queryKey: ["/api/invoices"],
+  });
+
+  const filteredInvoices = useMemo(() => {
+    let filtered = [...invoices];
+
+    // Filtro por data de emissão (início)
+    if (appliedFilters.dataEmissaoInicio) {
+      const inicio = new Date(appliedFilters.dataEmissaoInicio);
+      filtered = filtered.filter(inv => new Date(inv.emissionDate) >= inicio);
+    }
+
+    // Filtro por data de emissão (fim)
+    if (appliedFilters.dataEmissaoFim) {
+      const fim = new Date(appliedFilters.dataEmissaoFim);
+      fim.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(inv => new Date(inv.emissionDate) <= fim);
+    }
+
+    // Filtro por cliente
+    if (appliedFilters.cliente) {
+      filtered = filtered.filter(inv =>
+        inv.clientName.toLowerCase().includes(appliedFilters.cliente.toLowerCase())
+      );
+    }
+
+    // Filtro por valor
+    if (appliedFilters.valor) {
+      const valorBusca = parseFloat(appliedFilters.valor.replace(",", "."));
+      if (!isNaN(valorBusca)) {
+        filtered = filtered.filter(inv => parseFloat(inv.value) === valorBusca);
+      }
+    }
+
+    // Filtro por Nº NFe
+    if (appliedFilters.nfeNumber) {
+      filtered = filtered.filter(inv =>
+        inv.invoiceNumber.toLowerCase().includes(appliedFilters.nfeNumber.toLowerCase())
+      );
+    }
+
+    // Filtro por vencimento
+    if (appliedFilters.vencimento) {
+      const vcto = new Date(appliedFilters.vencimento);
+      filtered = filtered.filter(inv => {
+        const dueDate = new Date(inv.dueDate);
+        return dueDate.toDateString() === vcto.toDateString();
+      });
+    }
+
+    // Filtro por status (ignora "all" ou vazio)
+    if (appliedFilters.status && appliedFilters.status !== "all") {
+      filtered = filtered.filter(inv => inv.status === appliedFilters.status);
+    }
+
+    return filtered;
+  }, [invoices, appliedFilters]);
+
+  const applyFilters = () => {
+    setAppliedFilters({ ...filters });
+  };
+
+  const clearFilters = () => {
+    const emptyFilters = {
+      dataEmissaoInicio: "",
+      dataEmissaoFim: "",
+      cliente: "",
+      valor: "",
+      nfeNumber: "",
+      vencimento: "",
+      status: "",
+    };
+    setFilters(emptyFilters);
+    setAppliedFilters(emptyFilters);
+  };
+
+  const hasActiveFilters = Object.values(appliedFilters).some(v => v !== "");
+
+  const formatCurrency = (value: string) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(parseFloat(value));
+  };
+
+  const formatDate = (date: Date | string) => {
+    return new Date(date).toLocaleDateString("pt-BR");
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "paid":
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Pago</Badge>;
+      case "pending":
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Pendente</Badge>;
+      case "overdue":
+        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Vencido</Badge>;
+      case "replaced":
+        return <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">Substituído</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64" data-testid="loading-faturamento">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6" data-testid="page-gestao-faturamento">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Faturamento</h2>
+        <Badge variant="secondary" className="text-sm">
+          {filteredInvoices.length} registro(s)
+        </Badge>
+      </div>
+
+      {/* Filtros */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filtros
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Data Emissão - Início */}
+            <div className="space-y-2">
+              <Label htmlFor="dataEmissaoInicio">Data Emissão (Início)</Label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="dataEmissaoInicio"
+                  type="date"
+                  value={filters.dataEmissaoInicio}
+                  onChange={(e) => setFilters({ ...filters, dataEmissaoInicio: e.target.value })}
+                  className="pl-10"
+                  data-testid="filter-data-emissao-inicio"
+                />
+              </div>
+            </div>
+
+            {/* Data Emissão - Fim */}
+            <div className="space-y-2">
+              <Label htmlFor="dataEmissaoFim">Data Emissão (Fim)</Label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="dataEmissaoFim"
+                  type="date"
+                  value={filters.dataEmissaoFim}
+                  onChange={(e) => setFilters({ ...filters, dataEmissaoFim: e.target.value })}
+                  className="pl-10"
+                  data-testid="filter-data-emissao-fim"
+                />
+              </div>
+            </div>
+
+            {/* Cliente */}
+            <div className="space-y-2">
+              <Label htmlFor="cliente">Cliente</Label>
+              <Input
+                id="cliente"
+                type="text"
+                placeholder="Buscar por cliente..."
+                value={filters.cliente}
+                onChange={(e) => setFilters({ ...filters, cliente: e.target.value })}
+                data-testid="filter-cliente"
+              />
+            </div>
+
+            {/* Valor */}
+            <div className="space-y-2">
+              <Label htmlFor="valor">Valor</Label>
+              <Input
+                id="valor"
+                type="text"
+                placeholder="Ex: 1500,00"
+                value={filters.valor}
+                onChange={(e) => setFilters({ ...filters, valor: e.target.value })}
+                data-testid="filter-valor"
+              />
+            </div>
+
+            {/* Nº NFe */}
+            <div className="space-y-2">
+              <Label htmlFor="nfeNumber">Nº NFe</Label>
+              <Input
+                id="nfeNumber"
+                type="text"
+                placeholder="Número da nota..."
+                value={filters.nfeNumber}
+                onChange={(e) => setFilters({ ...filters, nfeNumber: e.target.value })}
+                data-testid="filter-nfe-number"
+              />
+            </div>
+
+            {/* Vencimento */}
+            <div className="space-y-2">
+              <Label htmlFor="vencimento">Vencimento</Label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="vencimento"
+                  type="date"
+                  value={filters.vencimento}
+                  onChange={(e) => setFilters({ ...filters, vencimento: e.target.value })}
+                  className="pl-10"
+                  data-testid="filter-vencimento"
+                />
+              </div>
+            </div>
+
+            {/* Status */}
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={filters.status}
+                onValueChange={(value) => setFilters({ ...filters, status: value })}
+              >
+                <SelectTrigger data-testid="filter-status">
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                  <SelectItem value="paid">Pago</SelectItem>
+                  <SelectItem value="overdue">Vencido</SelectItem>
+                  <SelectItem value="replaced">Substituído</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Botões */}
+            <div className="space-y-2 flex items-end gap-2">
+              <Button onClick={applyFilters} className="flex-1" data-testid="button-apply-filters">
+                <Search className="h-4 w-4 mr-2" />
+                Filtrar
+              </Button>
+              {hasActiveFilters && (
+                <Button variant="outline" onClick={clearFilters} data-testid="button-clear-filters">
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabela de Notas Fiscais */}
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nº NFe</TableHead>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Tipo de Serviço</TableHead>
+                <TableHead className="text-right">Valor</TableHead>
+                <TableHead>Emissão</TableHead>
+                <TableHead>Vencimento</TableHead>
+                <TableHead>Pagamento</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredInvoices.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    {hasActiveFilters
+                      ? "Nenhuma nota fiscal encontrada com os filtros aplicados."
+                      : "Nenhuma nota fiscal cadastrada."}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredInvoices.map((invoice) => (
+                  <TableRow key={invoice.id} data-testid={`row-invoice-${invoice.id}`}>
+                    <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                    <TableCell>{invoice.clientName}</TableCell>
+                    <TableCell>{invoice.serviceType}</TableCell>
+                    <TableCell className="text-right font-mono">
+                      {formatCurrency(invoice.value)}
+                    </TableCell>
+                    <TableCell>{formatDate(invoice.emissionDate)}</TableCell>
+                    <TableCell>{formatDate(invoice.dueDate)}</TableCell>
+                    <TableCell>
+                      {invoice.paymentDate ? formatDate(invoice.paymentDate) : "-"}
+                    </TableCell>
+                    <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 function GestaoAdministrativo() {
