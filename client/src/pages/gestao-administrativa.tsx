@@ -430,62 +430,30 @@ function GestaoPublicacoes() {
               <CardTitle>Consolidado por Cliente</CardTitle>
             </CardHeader>
             <CardContent>
-              {consolidadoPorCliente.length === 0 ? (
+              {filteredData.length === 0 ? (
                 <p className="text-center py-8 text-muted-foreground">Nenhuma publicação encontrada no período.</p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-10"></TableHead>
                       <TableHead>Aut._nº</TableHead>
                       <TableHead>Cliente</TableHead>
                       <TableHead className="text-right">Valor Total</TableHead>
                       <TableHead className="text-right">Valor Bruto</TableHead>
                       <TableHead className="text-right">Valor Líquido</TableHead>
                       <TableHead className="text-right">Diagramação</TableHead>
-                      <TableHead className="text-center">Publicações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {consolidadoPorCliente.map((grupo) => (
-                      <Fragment key={grupo.clientName}>
-                        <TableRow 
-                          className="cursor-pointer hover-elevate"
-                          onClick={() => toggleRow(grupo.clientName)}
-                          data-testid={`row-cliente-${grupo.clientName}`}
-                        >
-                          <TableCell>
-                            {expandedRows.has(grupo.clientName) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </TableCell>
-                          <TableCell></TableCell>
-                          <TableCell className="font-medium">{grupo.clientName}</TableCell>
-                          <TableCell className="text-right font-semibold">{formatCurrency(grupo.valorTotal)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(grupo.valorBruto)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(grupo.valorLiquido)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(grupo.diagramacao)}</TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="secondary">{grupo.count}</Badge>
-                          </TableCell>
-                        </TableRow>
-                        {expandedRows.has(grupo.clientName) && grupo.items.map((item) => (
-                          <TableRow key={item.id} className="bg-muted/50">
-                            <TableCell></TableCell>
-                            <TableCell className="font-mono text-sm">{item.authorizationNumber}</TableCell>
-                            <TableCell className="pl-8 text-sm">
-                              {item.jornal} - {item.mes}/{item.ano}
-                            </TableCell>
-                            <TableCell className="text-right text-sm">{formatCurrency(parseFloat(item.valorTotal || "0"))}</TableCell>
-                            <TableCell className="text-right text-sm">{formatCurrency(parseFloat(item.valorBruto || "0"))}</TableCell>
-                            <TableCell className="text-right text-sm">{formatCurrency(parseFloat(item.valorLiquido || "0"))}</TableCell>
-                            <TableCell className="text-right text-sm">{formatCurrency(parseFloat(item.diagramacao || "0"))}</TableCell>
-                            <TableCell className="text-center text-sm">{item.formato}</TableCell>
-                          </TableRow>
-                        ))}
-                      </Fragment>
+                    {filteredData.map((auth) => (
+                      <TableRow key={auth.id} data-testid={`row-cliente-${auth.id}`}>
+                        <TableCell className="font-mono">{auth.authorizationNumber}</TableCell>
+                        <TableCell className="font-medium">{auth.clientName}</TableCell>
+                        <TableCell className="text-right font-semibold">{formatCurrency(parseFloat(auth.valorTotal || "0"))}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(parseFloat(auth.valorBruto || "0"))}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(parseFloat(auth.valorLiquido || "0"))}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(parseFloat(auth.diagramacao || "0"))}</TableCell>
+                      </TableRow>
                     ))}
                   </TableBody>
                 </Table>
