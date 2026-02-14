@@ -364,6 +364,8 @@ export const invoices = pgTable("invoices", {
   cnpj: varchar("cnpj", { length: 18 }).notNull(),
   clientName: text("client_name").notNull(),
   clientEmail: varchar("client_email"),
+  clientEmail2: varchar("client_email2"),
+  clientEmail3: varchar("client_email3"),
   
   // Tipo de Serviço (DOU, DOE, Diagramação, Comissão, Outros)
   serviceType: varchar("service_type", { length: 50 }).notNull(),
@@ -414,6 +416,8 @@ export const insertInvoiceSchema = createInsertSchema(invoices)
     cnpj: z.string().regex(/^\d{14}$|^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, "CNPJ inválido"),
     clientName: z.string().min(1, "Razão social é obrigatória"),
     clientEmail: z.string().email("E-mail inválido").optional().nullable().or(z.literal("")),
+    clientEmail2: z.string().email("E-mail 2 inválido").optional().nullable().or(z.literal("")),
+    clientEmail3: z.string().email("E-mail 3 inválido").optional().nullable().or(z.literal("")),
     serviceType: z.string().min(1, "Tipo de serviço é obrigatório"),
     value: z.string().refine((val) => parseFloat(val) > 0, "Valor deve ser maior que zero"),
     emissionDate: z.coerce.date(),
@@ -469,6 +473,8 @@ export const updateInvoiceSchema = z.object({
   cnpj: z.string().regex(/^\d{14}$|^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, "CNPJ inválido").optional(),
   clientName: z.string().min(1, "Razão social é obrigatória").optional(),
   clientEmail: z.string().email("E-mail inválido").optional().nullable().or(z.literal("")).optional(),
+  clientEmail2: z.string().email("E-mail 2 inválido").optional().nullable().or(z.literal("")).optional(),
+  clientEmail3: z.string().email("E-mail 3 inválido").optional().nullable().or(z.literal("")).optional(),
   serviceType: z.string().min(1, "Tipo de serviço é obrigatório").optional(),
   value: z.string().refine((val) => parseFloat(val) > 0, "Valor deve ser maior que zero").optional(),
   emissionDate: z.coerce.date().optional(),
