@@ -40,8 +40,12 @@ const clientFormSchema = z.object({
   state: z.string().length(2, "UF deve ter 2 caracteres"),
   zip: z.string().min(8, "CEP deve ter 8 dígitos"),
   email: z.string().email("E-mail inválido").optional().or(z.literal('')),
+  email2: z.string().email("E-mail 2 inválido").optional().or(z.literal('')),
+  email3: z.string().email("E-mail 3 inválido").optional().or(z.literal('')),
   telefone: z.string().optional(),
+  telefone2: z.string().optional(),
   celular: z.string().optional(),
+  celular2: z.string().optional(),
 });
 
 type ClientFormData = z.infer<typeof clientFormSchema>;
@@ -67,8 +71,12 @@ export default function Clientes() {
       state: "",
       zip: "",
       email: "",
+      email2: "",
+      email3: "",
       telefone: "",
+      telefone2: "",
       celular: "",
+      celular2: "",
     },
   });
 
@@ -181,8 +189,12 @@ export default function Clientes() {
       state: client.state,
       zip: client.zip,
       email: client.email || "",
+      email2: client.email2 || "",
+      email3: client.email3 || "",
       telefone: client.telefone || "",
+      telefone2: client.telefone2 || "",
       celular: client.celular || "",
+      celular2: client.celular2 || "",
     });
     setIsNewDialogOpen(true);
   };
@@ -443,6 +455,36 @@ export default function Clientes() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
+                  name="email2"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail 2</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="email2@empresa.com" {...field} data-testid="input-email2" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email3"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail 3</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="email3@empresa.com" {...field} data-testid="input-email3" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
                   name="telefone"
                   render={({ field }) => (
                     <FormItem>
@@ -457,12 +499,42 @@ export default function Clientes() {
 
                 <FormField
                   control={form.control}
+                  name="telefone2"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone 2</FormLabel>
+                      <FormControl>
+                        <Input placeholder="(00) 0000-0000" {...field} data-testid="input-telefone2" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
                   name="celular"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Celular</FormLabel>
                       <FormControl>
                         <Input placeholder="(00) 00000-0000" {...field} data-testid="input-celular" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="celular2"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Celular 2</FormLabel>
+                      <FormControl>
+                        <Input placeholder="(00) 00000-0000" {...field} data-testid="input-celular2" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
