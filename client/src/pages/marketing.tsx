@@ -259,7 +259,7 @@ function CalendarTab() {
                     {dayActivities.map((activity) => (
                       <div
                         key={activity.id}
-                        className="text-xs p-1 rounded truncate bg-[#53fd1f]"
+                        className="text-xs p-1 rounded truncate bg-[#cbeee1]"
                         style={{ backgroundColor: STATUS_COLORS[activity.status] + "20", borderLeft: `3px solid ${STATUS_COLORS[activity.status]}` }}
                         onClick={(e) => {
                           e.stopPropagation();
