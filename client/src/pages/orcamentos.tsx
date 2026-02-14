@@ -931,7 +931,6 @@ export default function Orcamentos() {
                 <tr className="border-b">
                   <th className="text-left p-3 text-sm font-medium">Nº Orc.</th>
                   <th className="text-left p-3 text-sm font-medium">Cliente</th>
-                  <th className="text-left p-3 text-sm font-medium">E-mail</th>
                   <th className="text-left p-3 text-sm font-medium">Valor Total</th>
                   <th className="text-left p-3 text-sm font-medium">Data Orç.</th>
                   <th className="text-left p-3 text-sm font-medium">Data Public.</th>
@@ -946,7 +945,6 @@ export default function Orcamentos() {
                       {String(budget.budgetNumber || 0).padStart(5, '0')}
                     </td>
                     <td className="p-3 text-sm font-medium">{budget.clientName}</td>
-                    <td className="p-3 text-sm text-muted-foreground">{budget.clientEmail}</td>
                     <td className="p-3 font-mono text-sm font-semibold">
                       R$ {parseFloat(budget.valorTotal).toFixed(2)}
                     </td>
