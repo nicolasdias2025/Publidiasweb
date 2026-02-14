@@ -68,12 +68,21 @@ const statusColors = {
 };
 
 // Schema de validação
+const PREDEFINED_SERVICE_TYPES = [
+  "Publicação DOU",
+  "Publicação DOE",
+  "Publicação DOU + DOE",
+  "Diagramação",
+  "Comissão Veículo",
+];
+
 const invoiceFormSchema = z.object({
   invoiceNumber: z.string().min(1, "Número da nota fiscal é obrigatório"),
   cnpj: z.string().regex(/^\d{14}$|^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, "CNPJ inválido"),
   clientName: z.string().min(1, "Razão social é obrigatória"),
   clientEmail: z.string().email("E-mail inválido").optional().or(z.literal("")),
   serviceType: z.string().min(1, "Tipo de serviço é obrigatório"),
+  serviceTypeCustom: z.string().optional().or(z.literal("")),
   value: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Valor deve ser maior que zero"),
   emissionDate: z.string().refine((val) => {
     const date = new Date(val);
@@ -107,6 +116,17 @@ const invoiceFormSchema = z.object({
   {
     message: "Data de pagamento deve ser maior ou igual à data de emissão",
     path: ["paymentDate"],
+  }
+).refine(
+  (data) => {
+    if (data.serviceType === "Outro") {
+      return !!data.serviceTypeCustom && data.serviceTypeCustom.trim().length > 0;
+    }
+    return true;
+  },
+  {
+    message: "Informe o tipo de serviço personalizado",
+    path: ["serviceTypeCustom"],
   }
 ).refine(
   (data) => {
@@ -152,6 +172,7 @@ export default function NotasFiscais() {
       clientName: "",
       clientEmail: "",
       serviceType: "Publicação DOU",
+      serviceTypeCustom: "",
       value: "",
       emissionDate: new Date().toISOString().split('T')[0],
       dueDate: new Date().toISOString().split('T')[0],
@@ -168,6 +189,7 @@ export default function NotasFiscais() {
 
   const watchedCnpj = form.watch("cnpj") || "";
   const watchedStatus = form.watch("status");
+  const watchedServiceType = form.watch("serviceType");
   const { clientData, isLoading: loadingLookup } = useClientLookup(watchedCnpj);
 
   // Autopreencher cliente quando CNPJ é encontrado
@@ -260,6 +282,7 @@ export default function NotasFiscais() {
       clientName: "",
       clientEmail: "",
       serviceType: "Publicação DOU",
+      serviceTypeCustom: "",
       value: "",
       emissionDate: new Date().toISOString().split('T')[0],
       dueDate: new Date().toISOString().split('T')[0],
@@ -277,12 +300,14 @@ export default function NotasFiscais() {
   const handleEdit = (invoice: Invoice) => {
     setEditingInvoice(invoice);
     
+    const isPredefined = PREDEFINED_SERVICE_TYPES.includes(invoice.serviceType);
     form.reset({
       invoiceNumber: invoice.invoiceNumber,
       cnpj: invoice.cnpj,
       clientName: invoice.clientName,
       clientEmail: invoice.clientEmail || "",
-      serviceType: invoice.serviceType,
+      serviceType: isPredefined ? invoice.serviceType : "Outro",
+      serviceTypeCustom: isPredefined ? "" : invoice.serviceType,
       value: invoice.value,
       emissionDate: new Date(invoice.emissionDate).toISOString().split('T')[0],
       dueDate: new Date(invoice.dueDate).toISOString().split('T')[0],
@@ -298,9 +323,14 @@ export default function NotasFiscais() {
   };
 
   const handleSubmit = (data: InvoiceFormData) => {
-    // Transforma string vazia em null para campos opcionais de data
+    const finalServiceType = data.serviceType === "Outro" && data.serviceTypeCustom
+      ? data.serviceTypeCustom
+      : data.serviceType;
+
+    const { serviceTypeCustom, ...rest } = data;
     const cleanedData = {
-      ...data,
+      ...rest,
+      serviceType: finalServiceType,
       paymentDate: data.paymentDate === "" ? null : data.paymentDate,
       clientEmail: data.clientEmail === "" ? null : data.clientEmail,
       comments: data.comments === "" ? null : data.comments,
@@ -746,12 +776,29 @@ export default function NotasFiscais() {
                           <SelectItem value="Publicação DOU + DOE">Publicação DOU + DOE</SelectItem>
                           <SelectItem value="Diagramação">Diagramação</SelectItem>
                           <SelectItem value="Comissão Veículo">Comissão Veículo</SelectItem>
+                          <SelectItem value="Outro">Outro (digitar)</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {watchedServiceType === "Outro" && (
+                  <FormField
+                    control={form.control}
+                    name="serviceTypeCustom"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Especifique o Tipo de Serviço *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Jornal Gazeta SP" {...field} data-testid="input-service-type-custom" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 {/* Valor */}
                 <FormField
