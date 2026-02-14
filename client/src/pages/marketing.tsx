@@ -228,7 +228,6 @@ function CalendarTab() {
           </Button>
         </div>
       </div>
-
       <Card>
         <CardContent className="p-0">
           <div className="grid grid-cols-7">
@@ -260,7 +259,7 @@ function CalendarTab() {
                     {dayActivities.map((activity) => (
                       <div
                         key={activity.id}
-                        className="text-xs p-1 rounded truncate"
+                        className="text-xs p-1 rounded truncate bg-[#46fd2d]"
                         style={{ backgroundColor: STATUS_COLORS[activity.status] + "20", borderLeft: `3px solid ${STATUS_COLORS[activity.status]}` }}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -278,7 +277,6 @@ function CalendarTab() {
           </div>
         </CardContent>
       </Card>
-
       <ActivityDialog
         isOpen={isDialogOpen}
         onClose={() => {
@@ -298,7 +296,6 @@ function CalendarTab() {
         onDelete={(id) => setDeleteId(id)}
         isPending={createMutation.isPending || updateMutation.isPending}
       />
-
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
