@@ -933,7 +933,8 @@ export default function Orcamentos() {
                   <th className="text-left p-3 text-sm font-medium">Cliente</th>
                   <th className="text-left p-3 text-sm font-medium">E-mail</th>
                   <th className="text-left p-3 text-sm font-medium">Valor Total</th>
-                  <th className="text-left p-3 text-sm font-medium">Data Publicação</th>
+                  <th className="text-left p-3 text-sm font-medium">Data Orç.</th>
+                  <th className="text-left p-3 text-sm font-medium">Data Public.</th>
                   <th className="text-left p-3 text-sm font-medium">Status</th>
                   <th className="text-right p-3 text-sm font-medium">Ações</th>
                 </tr>
@@ -949,9 +950,16 @@ export default function Orcamentos() {
                     <td className="p-3 font-mono text-sm font-semibold">
                       R$ {parseFloat(budget.valorTotal).toFixed(2)}
                     </td>
+                    <td className="p-3 text-sm text-muted-foreground" data-testid={`text-data-orc-${budget.id}`}>
+                      {(() => {
+                        if (!budget.createdAt) return "—";
+                        const dateStr = typeof budget.createdAt === 'string' ? budget.createdAt : budget.createdAt.toISOString();
+                        const dateParts = dateStr.split('T')[0].split('-');
+                        return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                      })()}
+                    </td>
                     <td className="p-3 text-sm text-muted-foreground">
                       {(() => {
-                        // Evita problema de timezone ao exibir data
                         const dateStr = typeof budget.date === 'string' ? budget.date : budget.date.toISOString();
                         const dateParts = dateStr.split('T')[0].split('-');
                         return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
@@ -1094,7 +1102,18 @@ export default function Orcamentos() {
                 <h3 className="text-sm font-semibold border-b pb-2">Data e Status</h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label className="text-muted-foreground text-xs">Data Publicação</Label>
+                    <Label className="text-muted-foreground text-xs">Data Orç.</Label>
+                    <p className="font-medium">
+                      {(() => {
+                        if (!viewingBudget.createdAt) return "—";
+                        const dateStr = typeof viewingBudget.createdAt === 'string' ? viewingBudget.createdAt : viewingBudget.createdAt.toISOString();
+                        const dateParts = dateStr.split('T')[0].split('-');
+                        return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                      })()}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Data Public.</Label>
                     <p className="font-medium">
                       {(() => {
                         const dateStr = typeof viewingBudget.date === 'string' ? viewingBudget.date : viewingBudget.date.toISOString();
