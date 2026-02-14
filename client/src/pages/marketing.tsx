@@ -256,7 +256,7 @@ function CalendarTab() {
                   <div className={`text-sm mb-2 ${isCurrentDay ? "bg-primary text-primary-foreground rounded-full w-7 h-7 flex items-center justify-center" : ""}`}>
                     {format(day, "d")}
                   </div>
-                  <div className="space-y-1 max-h-[80px] overflow-auto">
+                  <div className="space-y-1">
                     {dayActivities.map((activity) => (
                       <div
                         key={activity.id}
@@ -268,7 +268,7 @@ function CalendarTab() {
                         }}
                         data-testid={`activity-${activity.id}`}
                       >
-                        {activity.title}
+                        {activity.collaborator}
                       </div>
                     ))}
                   </div>
