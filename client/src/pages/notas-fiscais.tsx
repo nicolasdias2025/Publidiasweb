@@ -81,6 +81,8 @@ const invoiceFormSchema = z.object({
   cnpj: z.string().regex(/^\d{14}$|^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, "CNPJ inválido"),
   clientName: z.string().min(1, "Razão social é obrigatória"),
   clientEmail: z.string().email("E-mail inválido").optional().or(z.literal("")),
+  clientEmail2: z.string().email("E-mail 2 inválido").optional().or(z.literal("")),
+  clientEmail3: z.string().email("E-mail 3 inválido").optional().or(z.literal("")),
   serviceType: z.string().min(1, "Tipo de serviço é obrigatório"),
   serviceTypeCustom: z.string().optional().or(z.literal("")),
   value: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Valor deve ser maior que zero"),
@@ -171,6 +173,8 @@ export default function NotasFiscais() {
       cnpj: "",
       clientName: "",
       clientEmail: "",
+      clientEmail2: "",
+      clientEmail3: "",
       serviceType: "Publicação DOU",
       serviceTypeCustom: "",
       value: "",
@@ -281,6 +285,8 @@ export default function NotasFiscais() {
       cnpj: "",
       clientName: "",
       clientEmail: "",
+      clientEmail2: "",
+      clientEmail3: "",
       serviceType: "Publicação DOU",
       serviceTypeCustom: "",
       value: "",
@@ -306,6 +312,8 @@ export default function NotasFiscais() {
       cnpj: invoice.cnpj,
       clientName: invoice.clientName,
       clientEmail: invoice.clientEmail || "",
+      clientEmail2: invoice.clientEmail2 || "",
+      clientEmail3: invoice.clientEmail3 || "",
       serviceType: isPredefined ? invoice.serviceType : "Outro",
       serviceTypeCustom: isPredefined ? "" : invoice.serviceType,
       value: invoice.value,
@@ -333,6 +341,8 @@ export default function NotasFiscais() {
       serviceType: finalServiceType,
       paymentDate: data.paymentDate === "" ? null : data.paymentDate,
       clientEmail: data.clientEmail === "" ? null : data.clientEmail,
+      clientEmail2: data.clientEmail2 === "" ? null : data.clientEmail2,
+      clientEmail3: data.clientEmail3 === "" ? null : data.clientEmail3,
       comments: data.comments === "" ? null : data.comments,
     };
     
@@ -741,7 +751,7 @@ export default function NotasFiscais() {
                 name="clientEmail"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>E-mail</FormLabel>
+                    <FormLabel>E-mail 1</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -754,6 +764,46 @@ export default function NotasFiscais() {
                   </FormItem>
                 )}
               />
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="clientEmail2"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail 2</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="email"
+                          placeholder="email2@empresa.com"
+                          data-testid="input-client-email2"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="clientEmail3"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail 3</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="email"
+                          placeholder="email3@empresa.com"
+                          data-testid="input-client-email3"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               {/* Grid com 2 colunas */}
               <div className="grid gap-4 sm:grid-cols-2">
