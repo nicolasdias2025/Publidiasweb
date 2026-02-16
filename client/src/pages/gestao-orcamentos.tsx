@@ -23,6 +23,7 @@ import {
   ChevronDown,
   ChevronRight,
   Filter,
+  Search,
   X,
   Calendar,
   Users,
@@ -105,6 +106,14 @@ export default function GestaoOrcamentos() {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [clienteFilter, setClienteFilter] = useState("");
   const [jornalFilter, setJornalFilter] = useState("");
+
+  const [appliedPeriodo, setAppliedPeriodo] = useState("mes");
+  const [appliedDataInicio, setAppliedDataInicio] = useState("");
+  const [appliedDataFim, setAppliedDataFim] = useState("");
+  const [appliedStatusFilter, setAppliedStatusFilter] = useState("todos");
+  const [appliedClienteFilter, setAppliedClienteFilter] = useState("");
+  const [appliedJornalFilter, setAppliedJornalFilter] = useState("");
+
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [expandedJornais, setExpandedJornais] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState("por-cliente");
@@ -133,7 +142,7 @@ export default function GestaoOrcamentos() {
     let startDate: Date | null = null;
     let endDate: Date = endOfDay(now);
 
-    switch (periodo) {
+    switch (appliedPeriodo) {
       case "hoje":
         startDate = startOfDay(now);
         break;
@@ -144,8 +153,8 @@ export default function GestaoOrcamentos() {
         startDate = startOfMonth(now);
         break;
       case "personalizado":
-        if (dataInicio) startDate = parseISO(dataInicio);
-        if (dataFim) endDate = endOfDay(parseISO(dataFim));
+        if (appliedDataInicio) startDate = parseISO(appliedDataInicio);
+        if (appliedDataFim) endDate = endOfDay(parseISO(appliedDataFim));
         break;
     }
 
@@ -155,27 +164,27 @@ export default function GestaoOrcamentos() {
       );
     }
 
-    if (statusFilter !== "todos") {
-      const isApproved = statusFilter === "aprovado";
+    if (appliedStatusFilter !== "todos") {
+      const isApproved = appliedStatusFilter === "aprovado";
       filtered = filtered.filter((b) => b.approved === isApproved);
     }
 
-    if (clienteFilter.trim()) {
-      const search = clienteFilter.toLowerCase();
+    if (appliedClienteFilter.trim()) {
+      const search = appliedClienteFilter.toLowerCase();
       filtered = filtered.filter((b) =>
         b.clientName.toLowerCase().includes(search)
       );
     }
 
-    if (jornalFilter.trim()) {
-      const search = jornalFilter.toLowerCase();
+    if (appliedJornalFilter.trim()) {
+      const search = appliedJornalFilter.toLowerCase();
       filtered = filtered.filter((b) =>
         b.lines.some((l) => l.jornal?.toLowerCase().includes(search))
       );
     }
 
     return filtered;
-  }, [processedBudgets, periodo, dataInicio, dataFim, statusFilter, clienteFilter, jornalFilter]);
+  }, [processedBudgets, appliedPeriodo, appliedDataInicio, appliedDataFim, appliedStatusFilter, appliedClienteFilter, appliedJornalFilter]);
 
   const clientConsolidated = useMemo((): ClientConsolidated[] => {
     const map = new Map<string, ClientConsolidated>();
@@ -251,18 +260,27 @@ export default function GestaoOrcamentos() {
   }, [filteredBudgets]);
 
   const periodoLabel = useMemo(() => {
-    switch (periodo) {
+    switch (appliedPeriodo) {
       case "hoje": return "Hoje";
       case "semana": return "Esta semana";
       case "mes": return format(new Date(), "MMMM yyyy", { locale: ptBR });
       case "personalizado": 
-        if (dataInicio && dataFim) {
-          return `${format(parseISO(dataInicio), "dd/MM/yyyy")} - ${format(parseISO(dataFim), "dd/MM/yyyy")}`;
+        if (appliedDataInicio && appliedDataFim) {
+          return `${format(parseISO(appliedDataInicio), "dd/MM/yyyy")} - ${format(parseISO(appliedDataFim), "dd/MM/yyyy")}`;
         }
         return "Personalizado";
       default: return "Período";
     }
-  }, [periodo, dataInicio, dataFim]);
+  }, [appliedPeriodo, appliedDataInicio, appliedDataFim]);
+
+  const handleApplyFilters = () => {
+    setAppliedPeriodo(periodo);
+    setAppliedDataInicio(dataInicio);
+    setAppliedDataFim(dataFim);
+    setAppliedStatusFilter(statusFilter);
+    setAppliedClienteFilter(clienteFilter);
+    setAppliedJornalFilter(jornalFilter);
+  };
 
   const handleClearFilters = () => {
     setPeriodo("mes");
@@ -271,6 +289,12 @@ export default function GestaoOrcamentos() {
     setStatusFilter("todos");
     setClienteFilter("");
     setJornalFilter("");
+    setAppliedPeriodo("mes");
+    setAppliedDataInicio("");
+    setAppliedDataFim("");
+    setAppliedStatusFilter("todos");
+    setAppliedClienteFilter("");
+    setAppliedJornalFilter("");
   };
 
   const toggleClientExpanded = (clientName: string) => {
@@ -466,6 +490,13 @@ export default function GestaoOrcamentos() {
             >
               <X className="h-4 w-4 mr-2" />
               Limpar filtros
+            </Button>
+            <Button
+              onClick={handleApplyFilters}
+              data-testid="button-aplicar-filtro"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Aplicar Filtro
             </Button>
           </div>
         </CardContent>
