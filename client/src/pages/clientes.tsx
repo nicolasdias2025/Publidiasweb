@@ -661,7 +661,7 @@ export default function Clientes() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
                 <div>
                   <Label className="text-xs text-muted-foreground">E-mail</Label>
                   <p className="font-medium flex items-center gap-2" data-testid="view-client-email">
@@ -671,13 +671,15 @@ export default function Clientes() {
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">E-mail 2</Label>
-                  <p className="font-medium" data-testid="view-client-email2">
+                  <p className="font-medium flex items-center gap-2" data-testid="view-client-email2">
+                    <Mail className="h-3 w-3 text-muted-foreground" />
                     {viewingClient.email2 || "—"}
                   </p>
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">E-mail 3</Label>
-                  <p className="font-medium" data-testid="view-client-email3">
+                  <p className="font-medium flex items-center gap-2" data-testid="view-client-email3">
+                    <Mail className="h-3 w-3 text-muted-foreground" />
                     {viewingClient.email3 || "—"}
                   </p>
                 </div>
