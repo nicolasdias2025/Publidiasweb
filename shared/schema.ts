@@ -295,9 +295,13 @@ export const clients = pgTable("clients", {
   email2: varchar("email2"),
   email3: varchar("email3"),
   telefone: varchar("telefone", { length: 20 }),
+  contatoTelefone: varchar("contato_telefone", { length: 100 }),
   telefone2: varchar("telefone2", { length: 20 }),
+  contatoTelefone2: varchar("contato_telefone2", { length: 100 }),
   celular: varchar("celular", { length: 20 }),
+  contatoCelular: varchar("contato_celular", { length: 100 }),
   celular2: varchar("celular2", { length: 20 }),
+  contatoCelular2: varchar("contato_celular2", { length: 100 }),
   
   // Metadados
   createdBy: varchar("created_by").notNull().references(() => users.id),

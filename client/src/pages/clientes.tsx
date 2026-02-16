@@ -43,9 +43,13 @@ const clientFormSchema = z.object({
   email2: z.string().email("E-mail 2 inválido").optional().or(z.literal('')),
   email3: z.string().email("E-mail 3 inválido").optional().or(z.literal('')),
   telefone: z.string().optional(),
+  contatoTelefone: z.string().optional(),
   telefone2: z.string().optional(),
+  contatoTelefone2: z.string().optional(),
   celular: z.string().optional(),
+  contatoCelular: z.string().optional(),
   celular2: z.string().optional(),
+  contatoCelular2: z.string().optional(),
 });
 
 type ClientFormData = z.infer<typeof clientFormSchema>;
@@ -75,9 +79,13 @@ export default function Clientes() {
       email2: "",
       email3: "",
       telefone: "",
+      contatoTelefone: "",
       telefone2: "",
+      contatoTelefone2: "",
       celular: "",
+      contatoCelular: "",
       celular2: "",
+      contatoCelular2: "",
     },
   });
 
@@ -193,9 +201,13 @@ export default function Clientes() {
       email2: client.email2 || "",
       email3: client.email3 || "",
       telefone: client.telefone || "",
+      contatoTelefone: client.contatoTelefone || "",
       telefone2: client.telefone2 || "",
+      contatoTelefone2: client.contatoTelefone2 || "",
       celular: client.celular || "",
+      contatoCelular: client.contatoCelular || "",
       celular2: client.celular2 || "",
+      contatoCelular2: client.contatoCelular2 || "",
     });
     setIsNewDialogOpen(true);
   };
@@ -502,63 +514,123 @@ export default function Clientes() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="telefone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefone</FormLabel>
-                      <FormControl>
-                        <Input placeholder="(00) 0000-0000" {...field} data-testid="input-telefone" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-2">
+                  <FormField
+                    control={form.control}
+                    name="telefone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefone</FormLabel>
+                        <FormControl>
+                          <Input placeholder="(00) 0000-0000" {...field} data-testid="input-telefone" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="contatoTelefone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contato</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome do contato" {...field} data-testid="input-contato-telefone" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="telefone2"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefone 2</FormLabel>
-                      <FormControl>
-                        <Input placeholder="(00) 0000-0000" {...field} data-testid="input-telefone2" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-2">
+                  <FormField
+                    control={form.control}
+                    name="telefone2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefone 2</FormLabel>
+                        <FormControl>
+                          <Input placeholder="(00) 0000-0000" {...field} data-testid="input-telefone2" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="contatoTelefone2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contato</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome do contato" {...field} data-testid="input-contato-telefone2" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="celular"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Celular</FormLabel>
-                      <FormControl>
-                        <Input placeholder="(00) 00000-0000" {...field} data-testid="input-celular" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-2">
+                  <FormField
+                    control={form.control}
+                    name="celular"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Celular</FormLabel>
+                        <FormControl>
+                          <Input placeholder="(00) 00000-0000" {...field} data-testid="input-celular" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="contatoCelular"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contato</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome do contato" {...field} data-testid="input-contato-celular" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="celular2"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Celular 2</FormLabel>
-                      <FormControl>
-                        <Input placeholder="(00) 00000-0000" {...field} data-testid="input-celular2" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-2">
+                  <FormField
+                    control={form.control}
+                    name="celular2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Celular 2</FormLabel>
+                        <FormControl>
+                          <Input placeholder="(00) 00000-0000" {...field} data-testid="input-celular2" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="contatoCelular2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contato</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome do contato" {...field} data-testid="input-contato-celular2" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
               <DialogFooter>
@@ -628,35 +700,51 @@ export default function Clientes() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Telefone</Label>
                   <p className="font-medium flex items-center gap-2" data-testid="view-client-telefone">
                     <Phone className="h-3 w-3 text-muted-foreground" />
                     {viewingClient.telefone || "—"}
                   </p>
+                  <Label className="text-xs text-muted-foreground">Contato</Label>
+                  <p className="font-medium text-sm" data-testid="view-client-contato-telefone">
+                    {viewingClient.contatoTelefone || "—"}
+                  </p>
                 </div>
-                <div>
+                <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Telefone 2</Label>
                   <p className="font-medium flex items-center gap-2" data-testid="view-client-telefone2">
                     <Phone className="h-3 w-3 text-muted-foreground" />
                     {viewingClient.telefone2 || "—"}
                   </p>
+                  <Label className="text-xs text-muted-foreground">Contato</Label>
+                  <p className="font-medium text-sm" data-testid="view-client-contato-telefone2">
+                    {viewingClient.contatoTelefone2 || "—"}
+                  </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Celular</Label>
                   <p className="font-medium flex items-center gap-2" data-testid="view-client-celular">
                     <Smartphone className="h-3 w-3 text-muted-foreground" />
                     {viewingClient.celular || "—"}
                   </p>
+                  <Label className="text-xs text-muted-foreground">Contato</Label>
+                  <p className="font-medium text-sm" data-testid="view-client-contato-celular">
+                    {viewingClient.contatoCelular || "—"}
+                  </p>
                 </div>
-                <div>
+                <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Celular 2</Label>
                   <p className="font-medium flex items-center gap-2" data-testid="view-client-celular2">
                     <Smartphone className="h-3 w-3 text-muted-foreground" />
                     {viewingClient.celular2 || "—"}
+                  </p>
+                  <Label className="text-xs text-muted-foreground">Contato</Label>
+                  <p className="font-medium text-sm" data-testid="view-client-contato-celular2">
+                    {viewingClient.contatoCelular2 || "—"}
                   </p>
                 </div>
               </div>
