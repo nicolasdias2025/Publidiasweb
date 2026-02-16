@@ -287,6 +287,7 @@ export default function Orcamentos() {
   };
 
   const handleLineChange = (index: number, field: keyof BudgetLine, value: any) => {
+    if (skipAutoCalc) setSkipAutoCalc(false);
     const newLines = [...lines];
     newLines[index] = { ...newLines[index], [field]: value };
     setLines(newLines);
@@ -781,7 +782,7 @@ export default function Orcamentos() {
                           step="0.01"
                           placeholder="0.00"
                           value={diagramacao}
-                          onChange={(e) => setDiagramacao(e.target.value)}
+                          onChange={(e) => { if (skipAutoCalc) setSkipAutoCalc(false); setDiagramacao(e.target.value); }}
                           data-testid="input-diagramacao"
                         />
                       </div>
