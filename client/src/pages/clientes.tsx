@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Loader2, Building2, Mail, MapPin, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Loader2, Building2, Mail, Phone, Smartphone, Edit, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -281,12 +281,22 @@ export default function Clientes() {
                             <Building2 className="h-3 w-3" />
                             <span data-testid={`text-client-cnpj-${client.id}`}>CNPJ: {client.cnpj}</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-3 w-3" />
-                            <span data-testid={`text-client-location-${client.id}`}>
-                              {client.city}/{client.state} - CEP: {client.zip}
-                            </span>
-                          </div>
+                          {(client.telefone || client.telefone2) && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-3 w-3" />
+                              <span data-testid={`text-client-phone-${client.id}`}>
+                                {[client.telefone, client.telefone2].filter(Boolean).join(" / ")}
+                              </span>
+                            </div>
+                          )}
+                          {(client.celular || client.celular2) && (
+                            <div className="flex items-center gap-2">
+                              <Smartphone className="h-3 w-3" />
+                              <span data-testid={`text-client-cellphone-${client.id}`}>
+                                {[client.celular, client.celular2].filter(Boolean).join(" / ")}
+                              </span>
+                            </div>
+                          )}
                           {client.email && (
                             <div className="flex items-center gap-2">
                               <Mail className="h-3 w-3" />
