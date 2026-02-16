@@ -53,7 +53,7 @@ import {
   type InsertAuthorization,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql, and, gte, lte, like, ilike } from "drizzle-orm";
+import { eq, desc, sql, and, gte, lte, lt, like, ilike } from "drizzle-orm";
 
 /**
  * Interface de Storage
@@ -274,6 +274,19 @@ export class DatabaseStorage implements IStorage {
   // ========== Invoice Operations ==========
   
   async getInvoices(): Promise<Invoice[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    await db
+      .update(invoices)
+      .set({ status: "overdue", updatedAt: new Date() })
+      .where(
+        and(
+          eq(invoices.status, "pending"),
+          lt(invoices.dueDate, today)
+        )
+      );
+
     return await db.select().from(invoices).orderBy(desc(invoices.createdAt));
   }
   
