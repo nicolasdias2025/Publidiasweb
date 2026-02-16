@@ -46,6 +46,7 @@ interface ProcessedBudget {
   clientEmail: string;
   date: Date;
   approved: boolean;
+  rejected: boolean;
   valorTotal: number;
   diagramacao: number;
   lines: BudgetLine[];
@@ -65,6 +66,7 @@ interface JornalConsolidated {
     clientName: string;
     date: Date;
     approved: boolean;
+    rejected: boolean;
     valorCmCol: number;
     formato: number;
     subtotal: number;
@@ -99,6 +101,18 @@ function formatDate(date: Date): string {
   return format(date, "dd/MM/yyyy", { locale: ptBR });
 }
 
+function getStatusLabel(approved: boolean, rejected: boolean): string {
+  if (approved) return "Aprovado";
+  if (rejected) return "Reprovado";
+  return "Pendente";
+}
+
+function getStatusBadgeClass(approved: boolean, rejected: boolean): string {
+  if (approved) return "bg-green-600 hover:bg-green-700 text-white";
+  if (rejected) return "bg-red-600 hover:bg-red-700 text-white";
+  return "bg-yellow-500 hover:bg-yellow-600 text-white";
+}
+
 export default function GestaoOrcamentos() {
   const [periodo, setPeriodo] = useState("mes");
   const [dataInicio, setDataInicio] = useState("");
@@ -129,6 +143,7 @@ export default function GestaoOrcamentos() {
       clientEmail: b.clientEmail,
       date: new Date(b.date),
       approved: b.approved || false,
+      rejected: (b as any).rejected || false,
       valorTotal: parseFloat(b.valorTotal || "0"),
       diagramacao: parseFloat(b.diagramacao || "0"),
       lines: processBudgetLines(b),
@@ -164,9 +179,12 @@ export default function GestaoOrcamentos() {
       );
     }
 
-    if (appliedStatusFilter !== "todos") {
-      const isApproved = appliedStatusFilter === "aprovado";
-      filtered = filtered.filter((b) => b.approved === isApproved);
+    if (appliedStatusFilter === "aprovado") {
+      filtered = filtered.filter((b) => b.approved);
+    } else if (appliedStatusFilter === "reprovado") {
+      filtered = filtered.filter((b) => b.rejected);
+    } else if (appliedStatusFilter === "pendente") {
+      filtered = filtered.filter((b) => !b.approved && !b.rejected);
     }
 
     if (appliedClienteFilter.trim()) {
@@ -224,6 +242,7 @@ export default function GestaoOrcamentos() {
             clientName: budget.clientName,
             date: budget.date,
             approved: budget.approved,
+            rejected: budget.rejected,
             valorCmCol: line.valorCmCol,
             formato: line.formato,
             subtotal,
@@ -236,6 +255,7 @@ export default function GestaoOrcamentos() {
               clientName: budget.clientName,
               date: budget.date,
               approved: budget.approved,
+              rejected: budget.rejected,
               valorCmCol: line.valorCmCol,
               formato: line.formato,
               subtotal,
@@ -333,7 +353,7 @@ export default function GestaoOrcamentos() {
       for (const client of clientConsolidated) {
         for (const budget of client.budgets) {
           const jornais = budget.lines.map((l) => l.jornal).filter(Boolean).join("; ");
-          csvContent += `"${client.clientName}",${formatDate(budget.date)},${budget.approved ? "Aprovado" : "Não aprovado"},${budget.valorTotal.toFixed(2)},${budget.diagramacao.toFixed(2)},"${jornais}"\n`;
+          csvContent += `"${client.clientName}",${formatDate(budget.date)},${getStatusLabel(budget.approved, budget.rejected)},${budget.valorTotal.toFixed(2)},${budget.diagramacao.toFixed(2)},"${jornais}"\n`;
         }
       }
     } else {
@@ -347,7 +367,7 @@ export default function GestaoOrcamentos() {
       csvContent += "Jornal/Veículo,Cliente,Data,Status,Valor cm x col,Formato,Subtotal\n";
       for (const jornal of jornalConsolidated) {
         for (const line of jornal.lines) {
-          csvContent += `"${jornal.jornal}","${line.clientName}",${formatDate(line.date)},${line.approved ? "Aprovado" : "Não aprovado"},${line.valorCmCol.toFixed(2)},${line.formato.toFixed(2)},${line.subtotal.toFixed(2)}\n`;
+          csvContent += `"${jornal.jornal}","${line.clientName}",${formatDate(line.date)},${getStatusLabel(line.approved, line.rejected)},${line.valorCmCol.toFixed(2)},${line.formato.toFixed(2)},${line.subtotal.toFixed(2)}\n`;
         }
       }
     }
@@ -451,8 +471,9 @@ export default function GestaoOrcamentos() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="aprovado">Aprovado</SelectItem>
-                  <SelectItem value="nao-aprovado">Não aprovado</SelectItem>
+                  <SelectItem value="aprovado">Aprovados</SelectItem>
+                  <SelectItem value="reprovado">Reprovados</SelectItem>
+                  <SelectItem value="pendente">Pendentes</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -671,12 +692,9 @@ export default function GestaoOrcamentos() {
                                                 <td className="p-3">{formatDate(budget.date)}</td>
                                                 <td className="p-3">
                                                   <Badge
-                                                    className={budget.approved 
-                                                      ? "bg-green-600 hover:bg-green-700 text-white" 
-                                                      : "bg-red-600 hover:bg-red-700 text-white"
-                                                    }
+                                                    className={getStatusBadgeClass(budget.approved, budget.rejected)}
                                                   >
-                                                    {budget.approved ? "Aprovado" : "Não aprovado"}
+                                                    {getStatusLabel(budget.approved, budget.rejected)}
                                                   </Badge>
                                                 </td>
                                                 <td className="p-3 text-right font-medium">
@@ -782,12 +800,9 @@ export default function GestaoOrcamentos() {
                                                 <td className="p-3">{formatDate(line.date)}</td>
                                                 <td className="p-3">
                                                   <Badge
-                                                    className={line.approved 
-                                                      ? "bg-green-600 hover:bg-green-700 text-white" 
-                                                      : "bg-red-600 hover:bg-red-700 text-white"
-                                                    }
+                                                    className={getStatusBadgeClass(line.approved, line.rejected)}
                                                   >
-                                                    {line.approved ? "Aprovado" : "Não aprovado"}
+                                                    {getStatusLabel(line.approved, line.rejected)}
                                                   </Badge>
                                                 </td>
                                                 <td className="p-3 text-right">
