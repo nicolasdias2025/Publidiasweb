@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,12 +13,22 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FileText, Loader2, Building2, Calendar, Plus, Pencil, Trash2, Eye, FileDown } from "lucide-react";
+import { FileText, Loader2, Building2, Calendar, Plus, Pencil, Trash2, Eye, FileDown, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useClientLookup } from "@/hooks/useClientLookup";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getAuthToken } from "@/lib/queryClient";
 import { generateAuthorizationPDF, loadLogoAsBase64 } from "@/lib/generateAuthorizationPDF";
 import type { Authorization } from "@shared/schema";
+
+interface ClientSearchResult {
+  id: string;
+  cnpj: string;
+  name: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+}
 
 const autorizacaoFormSchema = z.object({
   // Dados do Cliente
@@ -52,6 +62,11 @@ export default function Autorizacoes() {
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [clientSearchResults, setClientSearchResults] = useState<ClientSearchResult[]>([]);
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [searchingClients, setSearchingClients] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   // Buscar autorizações existentes
@@ -140,6 +155,9 @@ export default function Autorizacoes() {
     form.reset();
     setSelectedDays([]);
     setEditingId(null);
+    setClientSearchResults([]);
+    setShowClientDropdown(false);
+    setSearchingClients(false);
   };
 
   const openNewForm = () => {
@@ -176,25 +194,70 @@ export default function Autorizacoes() {
     setIsDialogOpen(true);
   };
 
-  const watchedCnpj = form.watch("cnpj") || "";
-  const { clientData, isLoading: loadingClient } = useClientLookup(watchedCnpj);
-
-  // Autopreencher dados do cliente
-  useEffect(() => {
-    if (clientData) {
-      form.setValue("clientName", clientData.name);
-      form.setValue("clientAddress", clientData.address);
-      form.setValue("clientCity", clientData.city);
-      form.setValue("clientState", clientData.state);
-      form.setValue("clientZip", clientData.zip);
-      form.setValue("clientEmail", clientData.email);
-      
-      toast({
-        title: "Cliente encontrado!",
-        description: `Dados de ${clientData.name} preenchidos automaticamente.`,
-      });
+  const searchClientsByName = useCallback((searchTerm: string) => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
-  }, [clientData, form, toast]);
+
+    if (searchTerm.trim().length < 2) {
+      setClientSearchResults([]);
+      setShowClientDropdown(false);
+      setSearchingClients(false);
+      return;
+    }
+
+    setSearchingClients(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const token = getAuthToken();
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const response = await fetch(`/api/clients/search-by-name?name=${encodeURIComponent(searchTerm)}`, { headers });
+        const result = await response.json();
+        
+        if (result.success && result.data.length > 0) {
+          setClientSearchResults(result.data);
+          setShowClientDropdown(true);
+        } else {
+          setClientSearchResults([]);
+          setShowClientDropdown(false);
+        }
+      } catch {
+        setClientSearchResults([]);
+        setShowClientDropdown(false);
+      } finally {
+        setSearchingClients(false);
+      }
+    }, 500);
+  }, []);
+
+  const selectClient = useCallback((client: ClientSearchResult) => {
+    form.setValue("cnpj", client.cnpj);
+    form.setValue("clientName", client.name);
+    form.setValue("clientAddress", client.address);
+    form.setValue("clientCity", client.city);
+    form.setValue("clientState", client.state);
+    form.setValue("clientZip", client.zip);
+    form.setValue("clientEmail", client.email);
+    setShowClientDropdown(false);
+    setClientSearchResults([]);
+
+    toast({
+      title: "Cliente selecionado!",
+      description: `Dados de ${client.name} preenchidos automaticamente.`,
+    });
+  }, [form, toast]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowClientDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Atualizar dias quando checkbox é marcado/desmarcado
   const toggleDay = (day: number) => {
@@ -426,19 +489,43 @@ export default function Autorizacoes() {
             <CardContent className="space-y-4">
               <FormField
                 control={form.control}
-                name="cnpj"
+                name="clientName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>CNPJ</FormLabel>
+                    <FormLabel>Razão Social</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <Input 
-                          placeholder="00.000.000/0000-00" 
-                          {...field} 
-                          data-testid="input-cnpj"
-                        />
-                        {loadingClient && (
-                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                      <div className="relative" ref={dropdownRef}>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Digite o nome da empresa para buscar..."
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              searchClientsByName(e.target.value);
+                            }}
+                            className="pl-9"
+                            data-testid="input-client-name"
+                          />
+                          {searchingClients && (
+                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                          )}
+                        </div>
+                        {showClientDropdown && clientSearchResults.length > 0 && (
+                          <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                            {clientSearchResults.map((client) => (
+                              <button
+                                key={client.id}
+                                type="button"
+                                className="w-full text-left px-3 py-2 text-sm hover-elevate cursor-pointer"
+                                onClick={() => selectClient(client)}
+                                data-testid={`client-option-${client.id}`}
+                              >
+                                <div className="font-medium">{client.name}</div>
+                                <div className="text-xs text-muted-foreground">{client.cnpj}</div>
+                              </button>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </FormControl>
@@ -450,12 +537,16 @@ export default function Autorizacoes() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="clientName"
+                  name="cnpj"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Razão Social</FormLabel>
+                      <FormLabel>CNPJ</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nome da empresa" {...field} data-testid="input-client-name" />
+                        <Input 
+                          placeholder="00.000.000/0000-00" 
+                          {...field} 
+                          data-testid="input-cnpj"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
