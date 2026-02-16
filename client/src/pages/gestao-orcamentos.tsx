@@ -45,6 +45,7 @@ interface ProcessedBudget {
   clientName: string;
   clientEmail: string;
   date: Date;
+  createdAt: Date;
   approved: boolean;
   rejected: boolean;
   valorTotal: number;
@@ -142,6 +143,7 @@ export default function GestaoOrcamentos() {
       clientName: b.clientName,
       clientEmail: b.clientEmail,
       date: new Date(b.date),
+      createdAt: new Date(b.createdAt),
       approved: b.approved || false,
       rejected: (b as any).rejected || false,
       valorTotal: parseFloat(b.valorTotal || "0"),
@@ -175,7 +177,7 @@ export default function GestaoOrcamentos() {
 
     if (startDate) {
       filtered = filtered.filter((b) =>
-        isWithinInterval(b.date, { start: startDate!, end: endDate })
+        isWithinInterval(b.createdAt, { start: startDate!, end: endDate })
       );
     }
 
