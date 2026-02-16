@@ -11,6 +11,12 @@
  * - Integração completa com backend
  */
 
+function formatBRL(value: number | string): string {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return "0,00";
+  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -728,7 +734,7 @@ export default function Orcamentos() {
                               R$ {(() => {
                                 const valorCliente = parseFloat(lines[4].valorCliente || "0") || 0;
                                 const formato = parseFloat(lines[4].formato || "0") || 0;
-                                return (valorCliente * formato).toFixed(2);
+                                return formatBRL(valorCliente * formato);
                               })()}
                             </span>
                           </div>
@@ -748,7 +754,7 @@ export default function Orcamentos() {
                                 const valorFinalCliente = valorCliente * formato;
                                 const impostoValor = valorFinalCliente * (imposto / 100);
                                 const custoLiquido = valorLiquido * formato;
-                                return (valorFinalCliente - impostoValor - custoLiquido).toFixed(2);
+                                return formatBRL(valorFinalCliente - impostoValor - custoLiquido);
                               })()}
                             </span>
                           </div>
@@ -783,7 +789,7 @@ export default function Orcamentos() {
                         <Label>Valor Total (calculado)</Label>
                         <div className="flex h-10 items-center rounded-md border bg-background px-3 py-2">
                           <span className="font-mono text-lg font-bold" data-testid="text-valor-total">
-                            R$ {valorTotal}
+                            R$ {formatBRL(valorTotal)}
                           </span>
                         </div>
                       </div>
@@ -946,7 +952,7 @@ export default function Orcamentos() {
                     </td>
                     <td className="p-3 text-sm font-medium">{budget.clientName}</td>
                     <td className="p-3 font-mono text-sm font-semibold">
-                      R$ {parseFloat(budget.valorTotal).toFixed(2)}
+                      R$ {formatBRL(budget.valorTotal)}
                     </td>
                     <td className="p-3 text-sm text-muted-foreground" data-testid={`text-data-orc-${budget.id}`}>
                       {(() => {
@@ -1069,7 +1075,7 @@ export default function Orcamentos() {
                             <span className="font-medium">Linha {index + 1}: {line.jornal}</span>
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            Formato: {line.formato} | Valor: R$ {parseFloat(line.valor || "0").toFixed(2)}
+                            Formato: {line.formato} | Valor: R$ {formatBRL(line.valor || "0")}
                           </div>
                         </div>
                       </div>
@@ -1084,12 +1090,12 @@ export default function Orcamentos() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-muted-foreground text-xs">Diagramação</Label>
-                    <p className="font-mono font-medium">R$ {parseFloat(viewingBudget.diagramacao || "0").toFixed(2)}</p>
+                    <p className="font-mono font-medium">R$ {formatBRL(viewingBudget.diagramacao || "0")}</p>
                   </div>
                   <div>
                     <Label className="text-muted-foreground text-xs">Valor Total</Label>
                     <p className="font-mono font-bold text-lg text-chart-2" data-testid="view-valor-total">
-                      R$ {parseFloat(viewingBudget.valorTotal).toFixed(2)}
+                      R$ {formatBRL(viewingBudget.valorTotal)}
                     </p>
                   </div>
                 </div>
