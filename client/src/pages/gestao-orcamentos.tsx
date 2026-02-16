@@ -143,7 +143,7 @@ export default function GestaoOrcamentos() {
       clientName: b.clientName,
       clientEmail: b.clientEmail,
       date: new Date(b.date),
-      createdAt: new Date(b.createdAt),
+      createdAt: b.createdAt ? new Date(b.createdAt) : new Date(b.date),
       approved: b.approved || false,
       rejected: (b as any).rejected || false,
       valorTotal: parseFloat(b.valorTotal || "0"),
