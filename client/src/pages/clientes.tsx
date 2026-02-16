@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Loader2, Building2, Mail, Phone, Smartphone, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Loader2, Building2, Mail, Phone, Smartphone, Eye, Edit, Trash2, MapPin } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +55,7 @@ export default function Clientes() {
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
+  const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const { toast } = useToast();
 
   const { data: clients = [], isLoading: loadingClients } = useQuery<Client[]>({
@@ -306,6 +307,14 @@ export default function Clientes() {
                         </div>
                       </div>
                       <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setViewingClient(client)}
+                          data-testid={`button-view-${client.id}`}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="icon"
@@ -569,6 +578,130 @@ export default function Clientes() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Visualizar Cliente */}
+      <Dialog open={!!viewingClient} onOpenChange={() => setViewingClient(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Dados do Cliente</DialogTitle>
+            <DialogDescription>
+              Visualização completa do cadastro do cliente.
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewingClient && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Razão Social</Label>
+                  <p className="font-medium" data-testid="view-client-name">{viewingClient.name}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">CNPJ</Label>
+                  <p className="font-medium" data-testid="view-client-cnpj">{viewingClient.cnpj}</p>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs text-muted-foreground">Endereço</Label>
+                <p className="font-medium flex items-center gap-2" data-testid="view-client-address">
+                  <MapPin className="h-3 w-3 text-muted-foreground" />
+                  {viewingClient.address}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Cidade</Label>
+                  <p className="font-medium" data-testid="view-client-city">{viewingClient.city}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">UF</Label>
+                  <p className="font-medium" data-testid="view-client-state">{viewingClient.state}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">CEP</Label>
+                  <p className="font-medium" data-testid="view-client-zip">{viewingClient.zip}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Telefone</Label>
+                  <p className="font-medium flex items-center gap-2" data-testid="view-client-telefone">
+                    <Phone className="h-3 w-3 text-muted-foreground" />
+                    {viewingClient.telefone || "—"}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Telefone 2</Label>
+                  <p className="font-medium flex items-center gap-2" data-testid="view-client-telefone2">
+                    <Phone className="h-3 w-3 text-muted-foreground" />
+                    {viewingClient.telefone2 || "—"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Celular</Label>
+                  <p className="font-medium flex items-center gap-2" data-testid="view-client-celular">
+                    <Smartphone className="h-3 w-3 text-muted-foreground" />
+                    {viewingClient.celular || "—"}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Celular 2</Label>
+                  <p className="font-medium flex items-center gap-2" data-testid="view-client-celular2">
+                    <Smartphone className="h-3 w-3 text-muted-foreground" />
+                    {viewingClient.celular2 || "—"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">E-mail</Label>
+                  <p className="font-medium flex items-center gap-2" data-testid="view-client-email">
+                    <Mail className="h-3 w-3 text-muted-foreground" />
+                    {viewingClient.email || "—"}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">E-mail 2</Label>
+                  <p className="font-medium" data-testid="view-client-email2">
+                    {viewingClient.email2 || "—"}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">E-mail 3</Label>
+                  <p className="font-medium" data-testid="view-client-email3">
+                    {viewingClient.email3 || "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingClient(null)} data-testid="button-close-view">
+              Fechar
+            </Button>
+            <Button
+              onClick={() => {
+                if (viewingClient) {
+                  setViewingClient(null);
+                  handleEdit(viewingClient);
+                }
+              }}
+              data-testid="button-edit-from-view"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
