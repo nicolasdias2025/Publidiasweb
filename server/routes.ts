@@ -242,6 +242,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Busca clientes por nome (Razão Social)
+  app.get("/api/clients/search-by-name", isAuthenticated, async (req, res) => {
+    try {
+      const { name } = req.query;
+      
+      if (!name || typeof name !== 'string' || name.trim().length < 2) {
+        return res.json({ success: true, data: [] });
+      }
+
+      const results = await storage.searchClientsByName(name.trim());
+      
+      res.json({
+        success: true,
+        data: results.map(client => ({
+          id: client.id,
+          cnpj: client.cnpj,
+          name: client.name,
+          email: client.email || "",
+          address: client.address,
+          city: client.city,
+          state: client.state,
+          zip: client.zip,
+        }))
+      });
+    } catch (error: any) {
+      console.error("Error searching clients by name:", error);
+      res.status(500).json({ 
+        success: false,
+        message: error.message || "Erro ao buscar clientes" 
+      });
+    }
+  });
+
   // Busca cliente por ID
   app.get("/api/clients/:id", isAuthenticated, async (req, res) => {
     try {

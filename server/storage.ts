@@ -78,6 +78,7 @@ export interface IStorage {
   getClients(): Promise<Client[]>;
   getClient(id: string): Promise<Client | undefined>;
   getClientByCNPJ(cnpj: string): Promise<Client | null>;
+  searchClientsByName(name: string): Promise<Client[]>;
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: string, client: Partial<InsertClient>): Promise<Client>;
   deleteClient(id: string): Promise<void>;
@@ -243,6 +244,15 @@ export class DatabaseStorage implements IStorage {
     return results[0] || null;
   }
   
+  async searchClientsByName(name: string): Promise<Client[]> {
+    const results = await db
+      .select()
+      .from(clients)
+      .where(sql`LOWER(${clients.name}) LIKE LOWER(${'%' + name + '%'})`)
+      .limit(10);
+    return results;
+  }
+
   async createClient(clientData: InsertClient): Promise<Client> {
     const [client] = await db.insert(clients).values(clientData).returning();
     return client;
