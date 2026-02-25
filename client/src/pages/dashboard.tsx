@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +24,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Budget, Authorization, Invoice, Campaign, Lead } from "@shared/schema";
+import type { Budget, Invoice, Campaign } from "@shared/schema";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -360,9 +361,27 @@ function OrcamentosPanel() {
 // ─── AUTORIZAÇÃO panel ────────────────────────────────────────────────────────
 
 function AutorizacaoPanel() {
-  const { data: authorizations = [], isLoading } = useQuery<Authorization[]>({
-    queryKey: ["/api/authorizations"],
+  const { toast } = useToast();
+
+  const { data: budgets = [], isLoading } = useQuery<Budget[]>({
+    queryKey: ["/api/budgets"],
   });
+
+  const confirmMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("PATCH", `/api/budgets/${id}`, { jornalConfirmed: true });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/budgets"] });
+      toast({ title: "Confirmação registrada!", description: "Autorização confirmada para o jornal." });
+    },
+    onError: () => {
+      toast({ title: "Erro", description: "Não foi possível confirmar.", variant: "destructive" });
+    },
+  });
+
+  // Mostra apenas orçamentos aprovados ainda não confirmados ao jornal
+  const pendentes = budgets.filter((b) => b.approved && !b.jornalConfirmed);
 
   return (
     <Card data-testid="panel-autorizacao">
@@ -372,36 +391,54 @@ function AutorizacaoPanel() {
           <table className="w-full">
             <thead>
               <tr className="border-b bg-muted/30">
-                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Nº Aut.</th>
-                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">CNPJ</th>
-                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Cliente</th>
+                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Nº Orç.</th>
+                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Clientes</th>
                 <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Jornal</th>
-                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Mês/Ano</th>
-                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</th>
+                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Total</th>
+                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Data Publ.</th>
+                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Ações</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <EmptyRow cols={6} message="Carregando..." />
-              ) : authorizations.length === 0 ? (
-                <EmptyRow cols={6} message="Nenhuma autorização cadastrada" />
+              ) : pendentes.length === 0 ? (
+                <EmptyRow cols={6} message="Nenhuma autorização pendente de confirmação" />
               ) : (
-                authorizations.map((a) => (
-                  <tr key={a.id} className="border-b hover:bg-muted/40" data-testid={`row-auth-${a.id}`}>
-                    <td className="p-3 text-sm font-mono font-semibold">
-                      {String(a.authorizationNumber || 0).padStart(5, "0")}
-                    </td>
-                    <td className="p-3 text-sm font-mono text-muted-foreground">{a.cnpj}</td>
-                    <td className="p-3 text-sm font-medium">{a.clientName}</td>
-                    <td className="p-3 text-sm text-muted-foreground">{a.jornal}</td>
-                    <td className="p-3 text-sm text-muted-foreground whitespace-nowrap">{a.mes}/{a.ano}</td>
-                    <td className="p-3">
-                      <Badge variant={a.status === "ativo" ? "default" : "secondary"}>
-                        {a.status === "ativo" ? "Ativo" : "Cancelado"}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))
+                pendentes.map((b) => {
+                  const jornal =
+                    b.line1Jornal || b.line2Jornal || b.line3Jornal ||
+                    b.line4Jornal || b.line5Jornal || "—";
+                  return (
+                    <tr
+                      key={b.id}
+                      className="border-b bg-yellow-100 dark:bg-yellow-900/30"
+                      data-testid={`row-autorizacao-${b.id}`}
+                    >
+                      <td className="p-3 text-sm font-mono font-semibold whitespace-nowrap">
+                        {String(b.budgetNumber || 0).padStart(5, "0")}
+                      </td>
+                      <td className="p-3 text-sm font-medium">{b.clientName}</td>
+                      <td className="p-3 text-sm text-muted-foreground">{jornal}</td>
+                      <td className="p-3 text-sm font-mono font-semibold whitespace-nowrap">
+                        R$ {formatBRL(b.valorTotal)}
+                      </td>
+                      <td className="p-3 text-sm text-muted-foreground whitespace-nowrap">
+                        {formatDate(b.date)}
+                      </td>
+                      <td className="p-3">
+                        <Button
+                          size="sm"
+                          onClick={() => confirmMutation.mutate(b.id)}
+                          disabled={confirmMutation.isPending}
+                          data-testid={`button-confirm-jornal-${b.id}`}
+                        >
+                          Confirmação Jornal
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

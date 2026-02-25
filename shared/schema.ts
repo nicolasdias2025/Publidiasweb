@@ -157,6 +157,7 @@ export const budgets = pgTable("budgets", {
   observations: text("observations"),
   approved: boolean("approved").default(false), // Checkbox "Aprovado" geral
   rejected: boolean("rejected").default(false), // Checkbox "Reprovado" geral
+  jornalConfirmed: boolean("jornal_confirmed").default(false), // Confirmação de envio ao jornal
   
   // Metadados
   createdBy: varchar("created_by").notNull().references(() => users.id),
