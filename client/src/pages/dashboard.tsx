@@ -403,7 +403,7 @@ function AutorizacaoPanel() {
 
   return (
     <Card data-testid="panel-autorizacao">
-      <PanelHeader icon={CheckSquare} title="Autorização" />
+      <PanelHeader icon={CheckSquare} title="Autorizações" />
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full">
