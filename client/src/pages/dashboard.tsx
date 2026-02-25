@@ -1,114 +1,186 @@
-import { StatCard } from "@/components/stat-card";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, CheckSquare, Receipt, TrendingUp, DollarSign, Users } from "lucide-react";
-import { StatusBadge } from "@/components/status-badge";
+import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FileText, CheckSquare, Receipt, TrendingUp, ArrowRight, Loader2 } from "lucide-react";
+import type { Budget, Authorization, Invoice, Campaign, Lead } from "@shared/schema";
+
+function ModuleCard({
+  title,
+  icon: Icon,
+  href,
+  isLoading,
+  stats,
+}: {
+  title: string;
+  icon: React.ElementType;
+  href: string;
+  isLoading: boolean;
+  stats: { label: string; value: string | number; highlight?: boolean }[];
+}) {
+  const [, setLocation] = useLocation();
+
+  return (
+    <Card
+      className="flex flex-col"
+      data-testid={`card-module-${title.toLowerCase().replace(/\s+/g, "-")}`}
+    >
+      <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-4">
+        <div className="h-10 w-10 rounded-md bg-primary flex items-center justify-center shrink-0">
+          <Icon className="h-5 w-5 text-primary-foreground" />
+        </div>
+        <CardTitle className="text-base font-semibold uppercase tracking-wide">
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col flex-1 gap-4">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {stats.map((stat) => (
+              <div
+                key={stat.label}
+                className="flex items-center justify-between border-b border-border/50 pb-2 last:border-0 last:pb-0"
+                data-testid={`stat-${title.toLowerCase().replace(/\s+/g, "-")}-${stat.label.toLowerCase().replace(/\s+/g, "-")}`}
+              >
+                <span className="text-sm text-muted-foreground">{stat.label}</span>
+                <span
+                  className={`text-sm font-bold tabular-nums ${
+                    stat.highlight ? "text-destructive" : "text-foreground"
+                  }`}
+                >
+                  {stat.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="mt-auto pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => setLocation(href)}
+            data-testid={`button-goto-${title.toLowerCase().replace(/\s+/g, "-")}`}
+          >
+            Acessar módulo
+            <ArrowRight className="ml-2 h-3 w-3" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Dashboard() {
-  //todo: remove mock functionality
-  const recentBudgets = [
-    { id: "ORC-001", cliente: "Empresa ABC Ltda", valor: "R$ 45.000,00", status: "pending" as const },
-    { id: "ORC-002", cliente: "Tech Solutions", valor: "R$ 28.500,00", status: "approved" as const },
-    { id: "ORC-003", cliente: "Indústria XYZ", valor: "R$ 92.000,00", status: "draft" as const },
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  const { data: budgets = [], isLoading: loadingBudgets } = useQuery<Budget[]>({
+    queryKey: ["/api/budgets"],
+  });
+
+  const { data: authorizations = [], isLoading: loadingAuth } = useQuery<Authorization[]>({
+    queryKey: ["/api/authorizations"],
+  });
+
+  const { data: invoices = [], isLoading: loadingInvoices } = useQuery<Invoice[]>({
+    queryKey: ["/api/invoices"],
+  });
+
+  const { data: campaigns = [], isLoading: loadingCampaigns } = useQuery<Campaign[]>({
+    queryKey: ["/api/campaigns"],
+  });
+
+  const { data: leads = [], isLoading: loadingLeads } = useQuery<Lead[]>({
+    queryKey: ["/api/leads"],
+  });
+
+  const budgetsThisMonth = budgets.filter((b) => {
+    const d = new Date(b.date);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  });
+
+  const budgetStats = [
+    { label: "Total de orçamentos", value: budgets.length },
+    { label: "Este mês", value: budgetsThisMonth.length },
   ];
 
-  const recentApprovals = [
-    { id: "AUT-045", tipo: "Compra de Equipamentos", solicitante: "João Silva", status: "pending" as const },
-    { id: "AUT-046", tipo: "Viagem Corporativa", solicitante: "Maria Santos", status: "approved" as const },
+  const authStats = [
+    { label: "Total de autorizações", value: authorizations.length },
+    {
+      label: "Ativas",
+      value: authorizations.filter((a) => a.status === "ativo").length,
+    },
+    {
+      label: "Canceladas",
+      value: authorizations.filter((a) => a.status === "cancelado").length,
+      highlight: authorizations.filter((a) => a.status === "cancelado").length > 0,
+    },
+  ];
+
+  const invoiceStats = [
+    { label: "Total de notas", value: invoices.length },
+    { label: "Emitidas", value: invoices.filter((i) => i.status === "issued").length },
+    { label: "Pendentes", value: invoices.filter((i) => i.status === "pending").length },
+    {
+      label: "Vencidas",
+      value: invoices.filter((i) => i.status === "overdue").length,
+      highlight: invoices.filter((i) => i.status === "overdue").length > 0,
+    },
+  ];
+
+  const marketingStats = [
+    { label: "Campanhas ativas", value: campaigns.filter((c) => c.status === "active").length },
+    { label: "Total de campanhas", value: campaigns.length },
+    { label: "Total de leads", value: leads.length },
+    {
+      label: "Leads qualificados",
+      value: leads.filter((l) => l.status === "qualified").length,
+    },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold" data-testid="text-page-title">Dashboard</h1>
+        <h1 className="text-3xl font-bold" data-testid="text-page-title">
+          Dashboard
+        </h1>
         <p className="text-muted-foreground">Visão geral do sistema corporativo</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <StatCard
-          title="Orçamentos Ativos"
-          value="24"
-          description="Últimos 30 dias"
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+        <ModuleCard
+          title="Orçamentos"
           icon={FileText}
-          trend={{ value: "+12%", isPositive: true }}
+          href="/orcamentos"
+          isLoading={loadingBudgets}
+          stats={budgetStats}
         />
-        <StatCard
-          title="Autorizações Pendentes"
-          value="8"
-          description="Aguardando aprovação"
+        <ModuleCard
+          title="Autorização"
           icon={CheckSquare}
+          href="/autorizacoes"
+          isLoading={loadingAuth}
+          stats={authStats}
         />
-        <StatCard
-          title="Notas Fiscais (mês)"
-          value="156"
-          description="Emitidas em novembro"
+        <ModuleCard
+          title="Notas Fiscais"
           icon={Receipt}
-          trend={{ value: "+8%", isPositive: true }}
+          href="/notas-fiscais"
+          isLoading={loadingInvoices}
+          stats={invoiceStats}
         />
-        <StatCard
-          title="Receita Total"
-          value="R$ 2.4M"
-          description="Acumulado no ano"
-          icon={DollarSign}
-          trend={{ value: "+18%", isPositive: true }}
-        />
-        <StatCard
-          title="Campanhas Ativas"
-          value="12"
-          description="Marketing em andamento"
+        <ModuleCard
+          title="Marketing"
           icon={TrendingUp}
+          href="/marketing"
+          isLoading={loadingCampaigns || loadingLeads}
+          stats={marketingStats}
         />
-        <StatCard
-          title="Usuários Ativos"
-          value="47"
-          description="Equipe cadastrada"
-          icon={Users}
-        />
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Orçamentos Recentes</CardTitle>
-            <CardDescription>Últimas propostas criadas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentBudgets.map((budget) => (
-                <div key={budget.id} className="flex items-center justify-between border-b pb-3 last:border-0">
-                  <div>
-                    <p className="font-medium font-mono text-sm" data-testid={`text-budget-id-${budget.id}`}>{budget.id}</p>
-                    <p className="text-sm text-muted-foreground">{budget.cliente}</p>
-                  </div>
-                  <div className="text-right space-y-1">
-                    <p className="font-semibold font-mono text-sm">{budget.valor}</p>
-                    <StatusBadge status={budget.status} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Autorizações Pendentes</CardTitle>
-            <CardDescription>Aguardando sua aprovação</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentApprovals.map((approval) => (
-                <div key={approval.id} className="flex items-center justify-between border-b pb-3 last:border-0">
-                  <div>
-                    <p className="font-medium font-mono text-sm" data-testid={`text-approval-id-${approval.id}`}>{approval.id}</p>
-                    <p className="text-sm text-muted-foreground">{approval.tipo}</p>
-                    <p className="text-xs text-muted-foreground">Por: {approval.solicitante}</p>
-                  </div>
-                  <StatusBadge status={approval.status} />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
