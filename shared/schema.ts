@@ -249,6 +249,11 @@ export const authorizations = pgTable("authorizations", {
   // Status
   status: varchar("status", { length: 20 }).notNull().default("ativo"), // ativo, cancelado
   
+  // Notas Fiscais - campos de controle
+  nfNumber: text("nf_number"),                              // Número da NF inserido pelo usuário
+  nfJornalSent: boolean("nf_jornal_sent").default(false),   // Botão JORNAL clicado
+  nfClienteSent: boolean("nf_cliente_sent").default(false), // Botão CLIENTE clicado
+  
   // Metadados
   createdBy: varchar("created_by").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),

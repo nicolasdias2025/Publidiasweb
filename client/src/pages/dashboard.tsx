@@ -23,8 +23,9 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import type { Budget, Invoice, Campaign, Client } from "@shared/schema";
+import type { Budget, Invoice, Campaign, Client, Authorization } from "@shared/schema";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -485,17 +486,47 @@ function AutorizacaoPanel() {
 
 // ─── NOTAS FISCAIS panel ──────────────────────────────────────────────────────
 
-const STATUS_NF: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending:   { label: "Pendente",  variant: "outline" },
-  issued:    { label: "Emitida",   variant: "default" },
-  overdue:   { label: "Vencida",   variant: "destructive" },
-  cancelled: { label: "Cancelada", variant: "secondary" },
-};
-
 function NotasFiscaisPanel() {
-  const { data: invoices = [], isLoading } = useQuery<Invoice[]>({
-    queryKey: ["/api/invoices"],
+  const { toast } = useToast();
+  const { data: authorizations = [], isLoading } = useQuery<Authorization[]>({
+    queryKey: ["/api/authorizations"],
   });
+
+  const [nfInputs, setNfInputs] = useState<Record<string, string>>({});
+
+  const pendentes = authorizations.filter(
+    (a) =>
+      a.status === "ativo" &&
+      !(a.nfNumber && a.nfJornalSent && a.nfClienteSent),
+  );
+
+  const patchAuth = async (id: string, data: Record<string, unknown>) => {
+    await apiRequest("PATCH", `/api/authorizations/${id}`, data);
+    await queryClient.invalidateQueries({ queryKey: ["/api/authorizations"] });
+  };
+
+  const handleNfBlur = async (auth: Authorization) => {
+    const val = (nfInputs[auth.id] ?? "").trim();
+    if (val === (auth.nfNumber ?? "")) return;
+    if (!val) return;
+    await patchAuth(auth.id, { nfNumber: val });
+  };
+
+  const handleJornal = async (auth: Authorization) => {
+    await patchAuth(auth.id, { nfJornalSent: true });
+    toast({ description: "JORNAL confirmado." });
+  };
+
+  const handleCliente = async (auth: Authorization) => {
+    await patchAuth(auth.id, { nfClienteSent: true });
+    toast({ description: "CLIENTE confirmado." });
+  };
+
+  const copyEmail = (email: string | null | undefined) => {
+    if (!email) return;
+    navigator.clipboard.writeText(email);
+    toast({ description: "E-mail copiado!" });
+  };
 
   return (
     <Card data-testid="panel-notas-fiscais">
@@ -505,37 +536,88 @@ function NotasFiscaisPanel() {
           <table className="w-full">
             <thead>
               <tr className="border-b bg-muted/30">
-                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Nº NF</th>
+                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Nº Aut.</th>
                 <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Cliente</th>
+                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Jornal</th>
+                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Tipo</th>
                 <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Valor</th>
-                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Emissão</th>
-                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Vencimento</th>
-                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</th>
+                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Ações</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <EmptyRow cols={6} message="Carregando..." />
-              ) : invoices.length === 0 ? (
-                <EmptyRow cols={6} message="Nenhuma nota fiscal cadastrada" />
+              ) : pendentes.length === 0 ? (
+                <EmptyRow cols={6} message="Nenhuma nota fiscal pendente" />
               ) : (
-                invoices.map((inv) => {
-                  const st = STATUS_NF[inv.status] ?? { label: inv.status, variant: "outline" as const };
+                pendentes.map((auth) => {
+                  const nfVal = nfInputs[auth.id] ?? (auth.nfNumber ?? "");
+                  const jornalDone = auth.nfJornalSent ?? false;
+                  const clienteDone = auth.nfClienteSent ?? false;
                   return (
-                    <tr key={inv.id} className="border-b hover:bg-muted/40" data-testid={`row-invoice-${inv.id}`}>
-                      <td className="p-3 text-sm font-mono font-semibold">{inv.invoiceNumber}</td>
-                      <td className="p-3 text-sm font-medium">{inv.clientName}</td>
+                    <tr
+                      key={auth.id}
+                      className="border-b hover:bg-muted/40"
+                      data-testid={`row-nf-${auth.id}`}
+                    >
                       <td className="p-3 text-sm font-mono font-semibold whitespace-nowrap">
-                        R$ {formatBRL(inv.value)}
+                        {String(auth.authorizationNumber).padStart(5, "0")}
                       </td>
-                      <td className="p-3 text-sm text-muted-foreground whitespace-nowrap">
-                        {formatDate(inv.emissionDate)}
+                      <td className="p-3 text-sm">
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">{auth.clientName}</span>
+                          {auth.clientEmail && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-6 w-6 shrink-0"
+                              onClick={() => copyEmail(auth.clientEmail)}
+                              data-testid={`button-copy-email-nf-${auth.id}`}
+                              title={`Copiar e-mail: ${auth.clientEmail}`}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
                       </td>
-                      <td className="p-3 text-sm text-muted-foreground whitespace-nowrap">
-                        {formatDate(inv.dueDate)}
+                      <td className="p-3 text-sm text-muted-foreground">{auth.jornal}</td>
+                      <td className="p-3 text-sm text-muted-foreground">{auth.tipo}</td>
+                      <td className="p-3 text-sm font-mono font-semibold whitespace-nowrap">
+                        R$ {formatBRL(auth.valorTotal)}
                       </td>
                       <td className="p-3">
-                        <Badge variant={st.variant}>{st.label}</Badge>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            className="h-8 w-28 text-sm font-mono"
+                            placeholder="Nº NF"
+                            value={nfVal}
+                            onChange={(e) =>
+                              setNfInputs((prev) => ({ ...prev, [auth.id]: e.target.value }))
+                            }
+                            onBlur={() => handleNfBlur(auth)}
+                            data-testid={`input-nf-number-${auth.id}`}
+                          />
+                          <Button
+                            size="sm"
+                            variant={jornalDone ? "secondary" : "outline"}
+                            disabled={jornalDone}
+                            onClick={() => handleJornal(auth)}
+                            data-testid={`button-jornal-${auth.id}`}
+                          >
+                            {jornalDone ? <CheckCircle2 className="h-3 w-3 mr-1" /> : null}
+                            JORNAL
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={clienteDone ? "secondary" : "outline"}
+                            disabled={clienteDone}
+                            onClick={() => handleCliente(auth)}
+                            data-testid={`button-cliente-${auth.id}`}
+                          >
+                            {clienteDone ? <CheckCircle2 className="h-3 w-3 mr-1" /> : null}
+                            CLIENTE
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );
