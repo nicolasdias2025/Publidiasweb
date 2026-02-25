@@ -24,7 +24,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Budget, Invoice, Campaign } from "@shared/schema";
+import type { Budget, Invoice, Campaign, Client } from "@shared/schema";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -367,6 +367,23 @@ function AutorizacaoPanel() {
     queryKey: ["/api/budgets"],
   });
 
+  const { data: clients = [] } = useQuery<Client[]>({
+    queryKey: ["/api/clients"],
+  });
+
+  function findCnpj(clientEmail: string): string | null {
+    const c = clients.find(
+      (cl) => cl.email === clientEmail || cl.email2 === clientEmail || cl.email3 === clientEmail
+    );
+    return c?.cnpj ?? null;
+  }
+
+  function copyCnpj(cnpj: string) {
+    navigator.clipboard.writeText(cnpj).then(() => {
+      toast({ title: "CNPJ copiado!", description: cnpj });
+    });
+  }
+
   const confirmMutation = useMutation({
     mutationFn: async (id: string) => {
       await apiRequest("PATCH", `/api/budgets/${id}`, { jornalConfirmed: true });
@@ -418,7 +435,25 @@ function AutorizacaoPanel() {
                       <td className="p-3 text-sm font-mono font-semibold whitespace-nowrap">
                         {String(b.budgetNumber || 0).padStart(5, "0")}
                       </td>
-                      <td className="p-3 text-sm font-medium">{b.clientName}</td>
+                      <td className="p-3 text-sm">
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">{b.clientName}</span>
+                          {(() => {
+                            const cnpj = findCnpj(b.clientEmail);
+                            return cnpj ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => copyCnpj(cnpj)}
+                                title={`Copiar CNPJ: ${cnpj}`}
+                                data-testid={`button-copy-cnpj-${b.id}`}
+                              >
+                                <Copy className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                            ) : null;
+                          })()}
+                        </div>
+                      </td>
                       <td className="p-3 text-sm text-muted-foreground">{jornal}</td>
                       <td className="p-3 text-sm font-mono font-semibold whitespace-nowrap">
                         R$ {formatBRL(b.valorTotal)}
