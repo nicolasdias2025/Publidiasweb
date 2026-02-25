@@ -599,23 +599,23 @@ function NotasFiscaisPanel() {
                           />
                           <Button
                             size="sm"
-                            variant={jornalDone ? "secondary" : "outline"}
+                            variant={jornalDone ? "secondary" : "default"}
                             disabled={jornalDone}
                             onClick={() => handleJornal(auth)}
                             data-testid={`button-jornal-${auth.id}`}
                           >
                             {jornalDone ? <CheckCircle2 className="h-3 w-3 mr-1" /> : null}
-                            JORNAL
+                            Jornal
                           </Button>
                           <Button
                             size="sm"
-                            variant={clienteDone ? "secondary" : "outline"}
+                            variant={clienteDone ? "secondary" : "default"}
                             disabled={clienteDone}
                             onClick={() => handleCliente(auth)}
                             data-testid={`button-cliente-${auth.id}`}
                           >
                             {clienteDone ? <CheckCircle2 className="h-3 w-3 mr-1" /> : null}
-                            CLIENTE
+                            Cliente
                           </Button>
                         </div>
                       </td>
