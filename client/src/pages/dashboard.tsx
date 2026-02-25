@@ -688,7 +688,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold" data-testid="text-page-title">
-          Dashboard
+          AÇÕES PUBLIDIAS
         </h1>
         <p className="text-muted-foreground">Visão geral do sistema corporativo</p>
       </div>
