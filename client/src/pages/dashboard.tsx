@@ -488,38 +488,38 @@ function AutorizacaoPanel() {
 
 function NotasFiscaisPanel() {
   const { toast } = useToast();
-  const { data: authorizations = [], isLoading } = useQuery<Authorization[]>({
-    queryKey: ["/api/authorizations"],
+  const { data: budgets = [], isLoading } = useQuery<Budget[]>({
+    queryKey: ["/api/budgets"],
   });
 
   const [nfInputs, setNfInputs] = useState<Record<string, string>>({});
 
-  const pendentes = authorizations.filter(
-    (a) =>
-      a.status === "ativo" &&
-      !(a.nfNumber && a.nfJornalSent && a.nfClienteSent),
+  const pendentes = budgets.filter(
+    (b) =>
+      b.jornalConfirmed === true &&
+      !(b.nfNumber && b.nfJornalSent && b.nfClienteSent),
   );
 
-  const patchAuth = async (id: string, data: Record<string, unknown>) => {
-    await apiRequest("PATCH", `/api/authorizations/${id}`, data);
-    await queryClient.invalidateQueries({ queryKey: ["/api/authorizations"] });
+  const patchBudget = async (id: string, data: Record<string, unknown>) => {
+    await apiRequest("PATCH", `/api/budgets/${id}`, data);
+    await queryClient.invalidateQueries({ queryKey: ["/api/budgets"] });
   };
 
-  const handleNfBlur = async (auth: Authorization) => {
-    const val = (nfInputs[auth.id] ?? "").trim();
-    if (val === (auth.nfNumber ?? "")) return;
+  const handleNfBlur = async (b: Budget) => {
+    const val = (nfInputs[b.id] ?? "").trim();
+    if (val === (b.nfNumber ?? "")) return;
     if (!val) return;
-    await patchAuth(auth.id, { nfNumber: val });
+    await patchBudget(b.id, { nfNumber: val });
   };
 
-  const handleJornal = async (auth: Authorization) => {
-    await patchAuth(auth.id, { nfJornalSent: true });
-    toast({ description: "JORNAL confirmado." });
+  const handleJornal = async (b: Budget) => {
+    await patchBudget(b.id, { nfJornalSent: true });
+    toast({ description: "Jornal confirmado." });
   };
 
-  const handleCliente = async (auth: Authorization) => {
-    await patchAuth(auth.id, { nfClienteSent: true });
-    toast({ description: "CLIENTE confirmado." });
+  const handleCliente = async (b: Budget) => {
+    await patchBudget(b.id, { nfClienteSent: true });
+    toast({ description: "Cliente confirmado." });
   };
 
   const copyEmail = (email: string | null | undefined) => {
@@ -536,54 +536,54 @@ function NotasFiscaisPanel() {
           <table className="w-full">
             <thead>
               <tr className="border-b bg-muted/30">
-                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Nº Aut.</th>
+                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Nº Orç.</th>
                 <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Cliente</th>
                 <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Jornal</th>
-                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Tipo</th>
                 <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Valor</th>
                 <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Ações</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <EmptyRow cols={6} message="Carregando..." />
+                <EmptyRow cols={5} message="Carregando..." />
               ) : pendentes.length === 0 ? (
-                <EmptyRow cols={6} message="Nenhuma nota fiscal pendente" />
+                <EmptyRow cols={5} message="Nenhuma nota fiscal pendente" />
               ) : (
-                pendentes.map((auth) => {
-                  const nfVal = nfInputs[auth.id] ?? (auth.nfNumber ?? "");
-                  const jornalDone = auth.nfJornalSent ?? false;
-                  const clienteDone = auth.nfClienteSent ?? false;
+                pendentes.map((b) => {
+                  const jornal =
+                    b.line1Jornal || b.line2Jornal || b.line3Jornal ||
+                    b.line4Jornal || b.line5Jornal || "—";
+                  const nfVal = nfInputs[b.id] ?? (b.nfNumber ?? "");
+                  const jornalDone = b.nfJornalSent ?? false;
+                  const clienteDone = b.nfClienteSent ?? false;
                   return (
                     <tr
-                      key={auth.id}
+                      key={b.id}
                       className="border-b hover:bg-muted/40"
-                      data-testid={`row-nf-${auth.id}`}
+                      data-testid={`row-nf-${b.id}`}
                     >
                       <td className="p-3 text-sm font-mono font-semibold whitespace-nowrap">
-                        {String(auth.authorizationNumber).padStart(5, "0")}
+                        {String(b.budgetNumber || 0).padStart(5, "0")}
                       </td>
                       <td className="p-3 text-sm">
                         <div className="flex items-center gap-1">
-                          <span className="font-medium">{auth.clientName}</span>
-                          {auth.clientEmail && (
+                          <span className="font-medium">{b.clientName}</span>
+                          {b.clientEmail && (
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-6 w-6 shrink-0"
-                              onClick={() => copyEmail(auth.clientEmail)}
-                              data-testid={`button-copy-email-nf-${auth.id}`}
-                              title={`Copiar e-mail: ${auth.clientEmail}`}
+                              onClick={() => copyEmail(b.clientEmail)}
+                              data-testid={`button-copy-email-nf-${b.id}`}
+                              title={`Copiar e-mail: ${b.clientEmail}`}
                             >
-                              <Copy className="h-3 w-3" />
+                              <Copy className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           )}
                         </div>
                       </td>
-                      <td className="p-3 text-sm text-muted-foreground">{auth.jornal}</td>
-                      <td className="p-3 text-sm text-muted-foreground">{auth.tipo}</td>
+                      <td className="p-3 text-sm text-muted-foreground">{jornal}</td>
                       <td className="p-3 text-sm font-mono font-semibold whitespace-nowrap">
-                        R$ {formatBRL(auth.valorTotal)}
+                        R$ {formatBRL(b.valorTotal)}
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-2">
@@ -592,17 +592,17 @@ function NotasFiscaisPanel() {
                             placeholder="Nº NF"
                             value={nfVal}
                             onChange={(e) =>
-                              setNfInputs((prev) => ({ ...prev, [auth.id]: e.target.value }))
+                              setNfInputs((prev) => ({ ...prev, [b.id]: e.target.value }))
                             }
-                            onBlur={() => handleNfBlur(auth)}
-                            data-testid={`input-nf-number-${auth.id}`}
+                            onBlur={() => handleNfBlur(b)}
+                            data-testid={`input-nf-number-${b.id}`}
                           />
                           <Button
                             size="sm"
                             variant={jornalDone ? "secondary" : "default"}
                             disabled={jornalDone}
-                            onClick={() => handleJornal(auth)}
-                            data-testid={`button-jornal-${auth.id}`}
+                            onClick={() => handleJornal(b)}
+                            data-testid={`button-jornal-${b.id}`}
                           >
                             {jornalDone ? <CheckCircle2 className="h-3 w-3 mr-1" /> : null}
                             Jornal
@@ -611,8 +611,8 @@ function NotasFiscaisPanel() {
                             size="sm"
                             variant={clienteDone ? "secondary" : "default"}
                             disabled={clienteDone}
-                            onClick={() => handleCliente(auth)}
-                            data-testid={`button-cliente-${auth.id}`}
+                            onClick={() => handleCliente(b)}
+                            data-testid={`button-cliente-${b.id}`}
                           >
                             {clienteDone ? <CheckCircle2 className="h-3 w-3 mr-1" /> : null}
                             Cliente
