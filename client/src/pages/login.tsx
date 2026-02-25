@@ -53,9 +53,9 @@ export default function LoginPage() {
       const response = await apiRequest("POST", "/api/auth/login", data);
       return response.json();
     },
-    onSuccess: async (result: { user: any; token: string }) => {
+    onSuccess: (result: { user: any; token: string }) => {
       setAuthToken(result.token);
-      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.setQueryData(["/api/auth/user"], result.user);
       toast({
         title: "Login realizado!",
         description: "Bem-vindo de volta ao sistema.",
@@ -76,9 +76,9 @@ export default function LoginPage() {
       const response = await apiRequest("POST", "/api/auth/register", data);
       return response.json();
     },
-    onSuccess: async (result: { user: any; token: string }) => {
+    onSuccess: (result: { user: any; token: string }) => {
       setAuthToken(result.token);
-      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.setQueryData(["/api/auth/user"], result.user);
       toast({
         title: "Conta criada!",
         description: "Você foi autenticado automaticamente.",
