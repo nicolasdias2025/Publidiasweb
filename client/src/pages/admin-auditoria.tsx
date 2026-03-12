@@ -41,9 +41,6 @@ const ENTITY_TYPES_MAP: Record<string, string> = {
   clients: "Cadastro de Clientes",
   authorizations: "Autorizações",
   campaigns: "Marketing",
-  users: "Usuários",
-  documents: "Gestão Administrativa",
-  processes: "Gestão Administrativa",
 };
 
 const ENTITY_TYPES = Object.keys(ENTITY_TYPES_MAP);
