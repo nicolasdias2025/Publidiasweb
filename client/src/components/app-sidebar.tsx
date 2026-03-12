@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useLocation } from "wouter";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useAuth } from "@/hooks/useAuth";
 
 const menuItems = [
   {
@@ -86,6 +87,7 @@ const gestaoAdminSubitems = [
 ];
 
 export function AppSidebar() {
+  const { user } = useAuth();
   const [location, setLocation] = useLocation();
   const [gestaoOpen, setGestaoOpen] = useState(
     location.startsWith("/gestao-administrativa")
@@ -167,7 +169,7 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="border-t p-4">
         <div className="text-xs text-muted-foreground">
-          <p>Usuário: admin@empresa.com</p>
+          <p>Usuário: {user?.username ?? "—"}</p>
           <p className="mt-1">v1.0.0</p>
         </div>
       </SidebarFooter>

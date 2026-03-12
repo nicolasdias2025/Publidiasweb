@@ -81,7 +81,7 @@ Preferred communication style: Simple, everyday language.
 
 **Core Tables:**
 - `sessions` - Session storage for authentication
-- `users` - User accounts with username, email, passwordHash, profile info
+- `users` - User accounts with username, passwordHash, profile info (no email — login exclusivamente por username)
 - `budgets` - Budget quotes for newspaper publications with line items
 - `approvals` - Approval workflows with type, requester, status
 - `invoices` - Invoice records with client, amounts, tax details

@@ -49,19 +49,12 @@ export async function setupAuth(app: Express) {
         return res.status(400).json({ message: "Nome de usuário já está em uso" });
       }
       
-      // Verificar se email já existe
-      const existingEmail = await storage.getUserByEmail(validatedData.email);
-      if (existingEmail) {
-        return res.status(400).json({ message: "E-mail já está cadastrado" });
-      }
-      
       // Hash da senha
       const passwordHash = await bcrypt.hash(validatedData.password, SALT_ROUNDS);
       
       // Criar usuário
       const user = await storage.createUser({
         username: validatedData.username,
-        email: validatedData.email,
         passwordHash,
       });
       
@@ -72,7 +65,6 @@ export async function setupAuth(app: Express) {
         user: {
           id: user.id,
           username: user.username,
-          email: user.email,
         },
         token,
       });
@@ -109,7 +101,6 @@ export async function setupAuth(app: Express) {
         user: {
           id: user.id,
           username: user.username,
-          email: user.email,
         },
         token,
       });
@@ -150,7 +141,6 @@ export async function setupAuth(app: Express) {
     res.json({
       id: user.id,
       username: user.username,
-      email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       profileImageUrl: user.profileImageUrl,

@@ -19,7 +19,6 @@ const loginSchema = z.object({
 
 const registerSchema = z.object({
   username: z.string().min(3, "Usuário deve ter pelo menos 3 caracteres").max(50, "Usuário deve ter no máximo 50 caracteres"),
-  email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
 });
 
@@ -43,7 +42,6 @@ export default function LoginPage() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       username: "",
-      email: "",
       password: "",
     },
   });
@@ -148,22 +146,6 @@ export default function LoginPage() {
                 {registerForm.formState.errors.username && (
                   <p className="text-sm font-medium text-destructive">
                     {registerForm.formState.errors.username.message}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="register-email">E-mail</Label>
-                <Input 
-                  id="register-email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="Digite seu e-mail" 
-                  data-testid="input-register-email"
-                  {...registerForm.register("email")}
-                />
-                {registerForm.formState.errors.email && (
-                  <p className="text-sm font-medium text-destructive">
-                    {registerForm.formState.errors.email.message}
                   </p>
                 )}
               </div>
