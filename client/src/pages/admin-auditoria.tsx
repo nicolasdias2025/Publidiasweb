@@ -34,7 +34,19 @@ interface AuditLog {
 }
 
 const ACTIONS = ["CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT"];
-const ENTITY_TYPES = ["budgets", "invoices", "users", "clients", "authorizations", "campaigns"];
+
+const ENTITY_TYPES_MAP: Record<string, string> = {
+  budgets: "Orçamentos",
+  invoices: "Notas Fiscais",
+  clients: "Cadastro de Clientes",
+  authorizations: "Autorizações",
+  campaigns: "Marketing",
+  users: "Usuários",
+  documents: "Gestão Administrativa",
+  processes: "Gestão Administrativa",
+};
+
+const ENTITY_TYPES = Object.keys(ENTITY_TYPES_MAP);
 
 const actionColors: Record<string, string> = {
   CREATE: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100",
@@ -112,7 +124,7 @@ export default function AdminAuditoria() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os módulos</SelectItem>
-                  {ENTITY_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {ENTITY_TYPES.map((t) => <SelectItem key={t} value={t}>{ENTITY_TYPES_MAP[t] || t}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -153,7 +165,7 @@ export default function AdminAuditoria() {
                       <td className="p-3 text-sm">
                         <Badge className={actionColors[log.action] || ""}>{log.action}</Badge>
                       </td>
-                      <td className="p-3 text-sm text-muted-foreground">{log.entityType}</td>
+                      <td className="p-3 text-sm text-muted-foreground">{ENTITY_TYPES_MAP[log.entityType] || log.entityType}</td>
                       <td className="p-3 text-sm">
                         <Button size="sm" variant="ghost" onClick={() => setSelectedLog(log)}>
                           <Eye className="h-4 w-4" />
