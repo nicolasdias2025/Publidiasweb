@@ -35,6 +35,14 @@ interface AuditLog {
 
 const ACTIONS = ["CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT"];
 
+const ACTION_LABELS: Record<string, string> = {
+  CREATE: "Criar",
+  UPDATE: "Atualizar",
+  DELETE: "Deletar",
+  LOGIN: "Entrar",
+  LOGOUT: "Sair",
+};
+
 const ENTITY_TYPES_MAP: Record<string, string> = {
   budgets: "Orçamentos",
   invoices: "Notas Fiscais",
@@ -108,7 +116,7 @@ export default function AdminAuditoria() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as ações</SelectItem>
-                  {ACTIONS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                  {ACTIONS.map((a) => <SelectItem key={a} value={a}>{ACTION_LABELS[a] || a}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -160,7 +168,7 @@ export default function AdminAuditoria() {
                       </td>
                       <td className="p-3 text-sm font-medium">{log.username || "Sistema"}</td>
                       <td className="p-3 text-sm">
-                        <Badge className={actionColors[log.action] || ""}>{log.action}</Badge>
+                        <Badge className={actionColors[log.action] || ""}>{ACTION_LABELS[log.action] || log.action}</Badge>
                       </td>
                       <td className="p-3 text-sm text-muted-foreground">{ENTITY_TYPES_MAP[log.entityType] || log.entityType}</td>
                       <td className="p-3 text-sm">
