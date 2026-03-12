@@ -190,20 +190,26 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  // ── Admin: remover colaborador (apenas role admin) ──────────────────────────
+  // ── Admin: deletar colaborador (apenas role admin) ──────────────────────────
   app.delete("/api/admin/users/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const requestingUser = (req as any).user;
       
       if (requestingUser.id === id) {
-        return res.status(400).json({ message: "Você não pode remover sua própria conta" });
+        return res.status(400).json({ message: "Você não pode deletar sua própria conta" });
       }
 
-      // Usando updateUser para "desativar" — ou simplesmente não implementamos delete por segurança
-      // Vamos apenas retornar 200 sem fazer nada (soft delete pode ser adicionado depois)
-      res.json({ message: "Colaborador removido" });
+      const userToDelete = await storage.getUser(id);
+      if (!userToDelete) {
+        return res.status(404).json({ message: "Colaborador não encontrado" });
+      }
+
+      // Delete do banco de dados
+      await storage.deleteUser(id);
+      res.json({ message: `Colaborador ${userToDelete.username} foi removido do sistema` });
     } catch (error) {
+      console.error("Delete user error:", error);
       res.status(500).json({ message: "Erro ao remover colaborador" });
     }
   });

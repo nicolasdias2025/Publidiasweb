@@ -17,7 +17,17 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Users, Plus, Loader2, ShieldCheck, KeyRound } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Users, Plus, Loader2, ShieldCheck, KeyRound, Trash2 } from "lucide-react";
 
 interface AdminUser {
   id: string;
@@ -40,9 +50,11 @@ type CreateFormData = z.infer<typeof createSchema>;
 
 export default function AdminUsuarios() {
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
+  const [openCreate, setOpenCreate] = useState(false);
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [deleteUsername, setDeleteUsername] = useState<string>("");
 
-  const { data: users = [], isLoading } = useQuery<AdminUser[]>({
+  const { data: users = [], isLoading, refetch } = useQuery<AdminUser[]>({
     queryKey: ["/api/admin/users"],
   });
 
@@ -63,11 +75,34 @@ export default function AdminUsuarios() {
         description: `Usuário "${newUser.username}" foi criado. No primeiro acesso, o sistema exigirá a criação de uma senha pessoal.`,
       });
       form.reset();
-      setOpen(false);
+      setOpenCreate(false);
     },
     onError: (error: Error) => {
       toast({
         title: "Erro ao criar colaborador",
+        description: error.message || "Tente novamente",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest("DELETE", `/api/admin/users/${id}`, {});
+      return response.json();
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "Colaborador removido!",
+        description: result.message,
+      });
+      setDeleteUserId(null);
+      setDeleteUsername("");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao remover colaborador",
         description: error.message || "Tente novamente",
         variant: "destructive",
       });
@@ -88,7 +123,7 @@ export default function AdminUsuarios() {
             Crie e gerencie os acessos dos colaboradores ao sistema
           </p>
         </div>
-        <Button onClick={() => setOpen(true)} data-testid="button-novo-colaborador">
+        <Button onClick={() => setOpenCreate(true)} data-testid="button-novo-colaborador">
           <Plus className="h-4 w-4 mr-2" />
           Novo Colaborador
         </Button>
@@ -115,18 +150,21 @@ export default function AdminUsuarios() {
                   <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                     Criado em
                   </th>
+                  <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Ações
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={4} className="text-center p-6 text-muted-foreground text-sm">
+                    <td colSpan={5} className="text-center p-6 text-muted-foreground text-sm">
                       Carregando...
                     </td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-center p-6 text-muted-foreground text-sm">
+                    <td colSpan={5} className="text-center p-6 text-muted-foreground text-sm">
                       Nenhum colaborador cadastrado
                     </td>
                   </tr>
@@ -165,6 +203,20 @@ export default function AdminUsuarios() {
                           ? new Date(u.createdAt).toLocaleDateString("pt-BR")
                           : "—"}
                       </td>
+                      <td className="p-3 text-sm">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setDeleteUserId(u.id);
+                            setDeleteUsername(u.username);
+                          }}
+                          data-testid={`button-delete-user-${u.id}`}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -174,7 +226,7 @@ export default function AdminUsuarios() {
         </CardContent>
       </Card>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={openCreate} onOpenChange={setOpenCreate}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Novo Colaborador</DialogTitle>
@@ -218,7 +270,7 @@ export default function AdminUsuarios() {
               </p>
             </div>
             <DialogFooter className="pt-2">
-              <Button variant="outline" type="button" onClick={() => setOpen(false)}>
+              <Button variant="outline" type="button" onClick={() => setOpenCreate(false)}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={createMutation.isPending} data-testid="button-criar-colaborador">
@@ -229,6 +281,28 @@ export default function AdminUsuarios() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteUserId} onOpenChange={(open) => !open && setDeleteUserId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover Colaborador</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover <strong>{deleteUsername}</strong>? Essa ação é irreversível e o colaborador perderá acesso ao sistema imediatamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteUserId && deleteMutation.mutate(deleteUserId)}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

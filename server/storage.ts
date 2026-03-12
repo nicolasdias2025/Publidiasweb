@@ -152,6 +152,7 @@ export interface IStorage {
   // ========== Admin User Operations ==========
   getUsers(): Promise<User[]>;
   updateUser(id: string, data: Partial<UpsertUser>): Promise<User>;
+  deleteUser(id: string): Promise<void>;
 }
 
 /**
@@ -190,6 +191,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
   
   // ========== Budget Operations ==========
