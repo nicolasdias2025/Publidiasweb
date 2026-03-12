@@ -93,12 +93,12 @@ export default function AdminAuditoria() {
 
             <div>
               <label className="text-sm font-medium mb-2 block">Ação</label>
-              <Select value={action} onValueChange={(v) => { setAction(v); setPage(1); }}>
+              <Select value={action || "all"} onValueChange={(v) => { setAction(v === "all" ? "" : v); setPage(1); }}>
                 <SelectTrigger data-testid="select-audit-action">
                   <SelectValue placeholder="Todas as ações" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="all">Todas as ações</SelectItem>
                   {ACTIONS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -106,12 +106,12 @@ export default function AdminAuditoria() {
 
             <div>
               <label className="text-sm font-medium mb-2 block">Módulo</label>
-              <Select value={entityType} onValueChange={(v) => { setEntityType(v); setPage(1); }}>
+              <Select value={entityType || "all"} onValueChange={(v) => { setEntityType(v === "all" ? "" : v); setPage(1); }}>
                 <SelectTrigger data-testid="select-audit-module">
-                  <SelectValue placeholder="Todos" />
+                  <SelectValue placeholder="Todos os módulos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos os módulos</SelectItem>
                   {ENTITY_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>

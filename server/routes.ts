@@ -341,17 +341,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/authorizations/:id", isAuthenticated, async (req, res) => {
-    try {
-      const authorization = await storage.getAuthorizationById(req.params.id);
-      if (!authorization) {
-        return res.status(404).json({ message: "Authorization not found" });
-      }
-      res.json(authorization);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch authorization" });
-    }
-  });
 
   app.post("/api/authorizations", isAuthenticated, async (req: any, res) => {
     try {
