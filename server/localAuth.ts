@@ -196,6 +196,8 @@ export async function setupAuth(app: Express) {
       const { id } = req.params;
       const requestingUser = (req as any).user;
       
+      console.log(`[DELETE USER] Attempting to delete user ${id} by admin ${requestingUser.username}`);
+      
       if (requestingUser.id === id) {
         return res.status(400).json({ message: "Você não pode deletar sua própria conta" });
       }
@@ -205,12 +207,17 @@ export async function setupAuth(app: Express) {
         return res.status(404).json({ message: "Colaborador não encontrado" });
       }
 
+      console.log(`[DELETE USER] User found: ${userToDelete.username}, attempting delete...`);
+
       // Delete do banco de dados
       await storage.deleteUser(id);
+      
+      console.log(`[DELETE USER] Successfully deleted user ${id}`);
       res.json({ message: `Colaborador ${userToDelete.username} foi removido do sistema` });
-    } catch (error) {
-      console.error("Delete user error:", error);
-      res.status(500).json({ message: "Erro ao remover colaborador" });
+    } catch (error: any) {
+      console.error("[DELETE USER] Error:", error?.message || error);
+      console.error("[DELETE USER] Full error:", error);
+      res.status(500).json({ message: `Erro ao remover colaborador: ${error?.message || 'Erro desconhecido'}` });
     }
   });
 }
