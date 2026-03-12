@@ -13,6 +13,7 @@ import {
   Newspaper,
   DollarSign,
   Briefcase,
+  ShieldCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -166,6 +167,28 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        {user?.role === "admin" && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Administração</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => setLocation("/admin/usuarios")}
+                    isActive={location === "/admin/usuarios"}
+                    data-testid="link-gerenciar-equipe"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    <span>Gerenciar Equipe</span>
+                    {location === "/admin/usuarios" && (
+                      <ChevronRight className="ml-auto h-4 w-4" />
+                    )}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter className="border-t p-4">
         <div className="text-xs text-muted-foreground">

@@ -61,15 +61,25 @@ Preferred communication style: Simple, everyday language.
 - Request/response logging middleware with duration tracking
 
 **Authentication System:**
-- Local authentication with username/password (replaces Replit OIDC)
+- Local authentication with username/password only (sem e-mail, sem Replit Auth)
 - Password hashing using bcrypt with configurable salt rounds
-- Session-based authentication using PostgreSQL session store
-- 7-day session TTL with secure, httpOnly cookies
+- JWT-based auth — tokens stored in localStorage (no sessions)
+- 7-day JWT expiry
 - Auth routes in `server/localAuth.ts`:
-  - `POST /api/auth/register` - Create account (username, email, password)
-  - `POST /api/auth/login` - Login with username/password
-  - `POST /api/auth/logout` - Logout and destroy session
-  - `GET /api/auth/user` - Get current authenticated user
+  - `POST /api/auth/login` - Login with username/password (returns role + requirePasswordChange)
+  - `POST /api/auth/logout` - Client-side token discard
+  - `GET /api/auth/user` - Get current authenticated user (JWT)
+  - `PATCH /api/auth/change-password` - Force password change on first access (requires auth)
+- Admin-only routes (require `role === 'admin'`):
+  - `GET /api/admin/users` - List all users
+  - `POST /api/admin/users` - Create new collaborator with temp password
+- Public `/api/auth/register` removed — user creation is admin-only
+
+**Security Model:**
+- `role` field: "user" (default) or "admin"
+- `requirePasswordChange` (boolean, default true): forces new user to set personal password on first login
+- Admin creates collaborator → collaborator must change temp password on first access
+- Non-admin users cannot see "/admin/usuarios" route or sidebar item
 
 **Data Layer:**
 - Storage abstraction layer (`server/storage.ts`) implementing `IStorage` interface

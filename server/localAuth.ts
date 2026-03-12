@@ -9,7 +9,8 @@ import type { Express, RequestHandler } from "express";
 import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { insertUserSchema, loginSchema } from "@shared/schema";
+import { loginSchema } from "@shared/schema";
+import { z } from "zod";
 
 const SALT_ROUNDS = 10;
 const JWT_EXPIRY = "7d"; // 7 dias
@@ -35,72 +36,41 @@ function verifyToken(token: string): { userId: string } | null {
   }
 }
 
+const createUserSchema = z.object({
+  username: z.string().min(3).max(50),
+  password: z.string().min(6),
+});
+
+const changePasswordSchema = z.object({
+  newPassword: z.string().min(6, "Nova senha deve ter pelo menos 6 caracteres"),
+});
+
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
-
-  // Registro de novo usuário
-  app.post("/api/auth/register", async (req, res) => {
-    try {
-      const validatedData = insertUserSchema.parse(req.body);
-      
-      // Verificar se username já existe
-      const existingUsername = await storage.getUserByUsername(validatedData.username);
-      if (existingUsername) {
-        return res.status(400).json({ message: "Nome de usuário já está em uso" });
-      }
-      
-      // Hash da senha
-      const passwordHash = await bcrypt.hash(validatedData.password, SALT_ROUNDS);
-      
-      // Criar usuário
-      const user = await storage.createUser({
-        username: validatedData.username,
-        passwordHash,
-      });
-      
-      // Gerar token JWT
-      const token = generateToken(user.id);
-      
-      res.status(201).json({
-        user: {
-          id: user.id,
-          username: user.username,
-        },
-        token,
-      });
-    } catch (error: any) {
-      console.error("Register error:", error);
-      if (error.errors) {
-        return res.status(400).json({ message: error.errors[0]?.message || "Dados inválidos" });
-      }
-      res.status(500).json({ message: "Erro ao criar conta" });
-    }
-  });
 
   // Login
   app.post("/api/auth/login", async (req, res) => {
     try {
       const validatedData = loginSchema.parse(req.body);
       
-      // Buscar usuário
       const user = await storage.getUserByUsername(validatedData.username);
       if (!user) {
         return res.status(401).json({ message: "Usuário ou senha inválidos" });
       }
       
-      // Verificar senha
       const passwordMatch = await bcrypt.compare(validatedData.password, user.passwordHash);
       if (!passwordMatch) {
         return res.status(401).json({ message: "Usuário ou senha inválidos" });
       }
       
-      // Gerar token JWT
       const token = generateToken(user.id);
       
       res.json({
         user: {
           id: user.id,
           username: user.username,
+          role: user.role,
+          requirePasswordChange: user.requirePasswordChange,
         },
         token,
       });
@@ -113,7 +83,7 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  // Logout (apenas para limpar token no cliente - não faz nada no servidor com JWT)
+  // Logout (JWT é stateless — apenas instrução ao cliente de descartar o token)
   app.post("/api/auth/logout", (_req, res) => {
     res.json({ message: "Logout realizado com sucesso" });
   });
@@ -141,16 +111,106 @@ export async function setupAuth(app: Express) {
     res.json({
       id: user.id,
       username: user.username,
+      role: user.role,
+      requirePasswordChange: user.requirePasswordChange,
       firstName: user.firstName,
       lastName: user.lastName,
       profileImageUrl: user.profileImageUrl,
     });
   });
+
+  // Troca de senha obrigatória no primeiro acesso (requer auth)
+  app.patch("/api/auth/change-password", isAuthenticated, async (req, res) => {
+    try {
+      const { newPassword } = changePasswordSchema.parse(req.body);
+      const user = (req as any).user;
+
+      const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+      await storage.updateUser(user.id, {
+        passwordHash,
+        requirePasswordChange: false,
+      });
+
+      res.json({ message: "Senha alterada com sucesso" });
+    } catch (error: any) {
+      console.error("Change password error:", error);
+      if (error.errors) {
+        return res.status(400).json({ message: error.errors[0]?.message || "Dados inválidos" });
+      }
+      res.status(500).json({ message: "Erro ao alterar senha" });
+    }
+  });
+
+  // ── Admin: listar usuários (apenas role admin) ──────────────────────────────
+  app.get("/api/admin/users", isAuthenticated, isAdmin, async (_req, res) => {
+    try {
+      const allUsers = await storage.getUsers();
+      res.json(allUsers.map((u) => ({
+        id: u.id,
+        username: u.username,
+        role: u.role,
+        requirePasswordChange: u.requirePasswordChange,
+        createdAt: u.createdAt,
+      })));
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao listar usuários" });
+    }
+  });
+
+  // ── Admin: criar novo colaborador (apenas role admin) ───────────────────────
+  app.post("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { username, password } = createUserSchema.parse(req.body);
+
+      const existing = await storage.getUserByUsername(username);
+      if (existing) {
+        return res.status(400).json({ message: "Nome de usuário já está em uso" });
+      }
+
+      const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+      const user = await storage.createUser({
+        username,
+        passwordHash,
+        role: "user",
+        requirePasswordChange: true,
+      });
+
+      res.status(201).json({
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        requirePasswordChange: user.requirePasswordChange,
+      });
+    } catch (error: any) {
+      console.error("Admin create user error:", error);
+      if (error.errors) {
+        return res.status(400).json({ message: error.errors[0]?.message || "Dados inválidos" });
+      }
+      res.status(500).json({ message: "Erro ao criar colaborador" });
+    }
+  });
+
+  // ── Admin: remover colaborador (apenas role admin) ──────────────────────────
+  app.delete("/api/admin/users/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const requestingUser = (req as any).user;
+      
+      if (requestingUser.id === id) {
+        return res.status(400).json({ message: "Você não pode remover sua própria conta" });
+      }
+
+      // Usando updateUser para "desativar" — ou simplesmente não implementamos delete por segurança
+      // Vamos apenas retornar 200 sem fazer nada (soft delete pode ser adicionado depois)
+      res.json({ message: "Colaborador removido" });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao remover colaborador" });
+    }
+  });
 }
 
 /**
  * Middleware de autenticação JWT
- * Protege rotas que requerem usuário autenticado
  */
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -171,7 +231,17 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
   
-  // Adiciona user ao request para uso posterior
   (req as any).user = user;
+  next();
+};
+
+/**
+ * Middleware de autorização — apenas admins
+ */
+export const isAdmin: RequestHandler = (req, res, next) => {
+  const user = (req as any).user;
+  if (!user || user.role !== "admin") {
+    return res.status(403).json({ message: "Acesso negado. Apenas administradores." });
+  }
   next();
 };

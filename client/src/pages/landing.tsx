@@ -94,7 +94,7 @@ export default function Landing() {
               Pronto para começar?
             </h2>
             <p className="mb-6 text-primary-foreground/90">
-              Faça login ou crie sua conta para acessar o sistema completo
+              Acesso restrito. Faça login com suas credenciais corporativas para acessar o sistema
             </p>
             <Button 
               variant="secondary"

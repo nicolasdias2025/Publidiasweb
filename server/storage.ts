@@ -148,6 +148,10 @@ export interface IStorage {
   updateAuthorization(id: string, authorization: Partial<InsertAuthorization>): Promise<Authorization>;
   deleteAuthorization(id: string): Promise<void>;
   getNextAuthorizationNumber(): Promise<number>;
+
+  // ========== Admin User Operations ==========
+  getUsers(): Promise<User[]>;
+  updateUser(id: string, data: Partial<UpsertUser>): Promise<User>;
 }
 
 /**
@@ -171,6 +175,19 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .insert(users)
       .values(userData)
+      .returning();
+    return user;
+  }
+
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(users.username);
+  }
+
+  async updateUser(id: string, data: Partial<UpsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(users.id, id))
       .returning();
     return user;
   }
