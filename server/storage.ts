@@ -18,6 +18,7 @@ import {
   marketingContent,
   contentVersions,
   contentComments,
+  auditLogs,
   contentTags,
   marketingMetrics,
   authorizations,
@@ -53,7 +54,7 @@ import {
   type InsertAuthorization,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql, and, gte, lte, lt, like, ilike } from "drizzle-orm";
+import { eq, desc, sql, and, gte, lte, lt, like, ilike, getTableColumns } from "drizzle-orm";
 
 /**
  * Interface de Storage
@@ -153,6 +154,17 @@ export interface IStorage {
   getUsers(): Promise<User[]>;
   updateUser(id: string, data: Partial<UpsertUser>): Promise<User>;
   deleteUser(id: string): Promise<void>;
+
+  // ========== Audit Log Operations ==========
+  getAuditLogs(filters?: {
+    page?: number;
+    limit?: number;
+    userId?: string;
+    action?: string;
+    entityType?: string;
+    dateFrom?: Date;
+    dateTo?: Date;
+  }): Promise<{ logs: (typeof auditLogs.$inferSelect & { username: string })[]; total: number }>;
 }
 
 /**
@@ -202,6 +214,55 @@ export class DatabaseStorage implements IStorage {
     await db.delete(marketingContent).where(eq(marketingContent.createdBy, id));
     // Finalmente, deletar o usuário
     await db.delete(users).where(eq(users.id, id));
+  }
+
+  async getAuditLogs(filters?: {
+    page?: number;
+    limit?: number;
+    userId?: string;
+    action?: string;
+    entityType?: string;
+    dateFrom?: Date;
+    dateTo?: Date;
+  }): Promise<{ logs: (typeof auditLogs.$inferSelect & { username: string })[]; total: number }> {
+    const page = filters?.page || 1;
+    const limit = filters?.limit || 50;
+    const offset = (page - 1) * limit;
+
+    let query = db
+      .select({
+        ...getTableColumns(auditLogs),
+        username: users.username,
+      })
+      .from(auditLogs)
+      .leftJoin(users, eq(auditLogs.userId, users.id));
+
+    if (filters?.userId) {
+      query = query.where(eq(auditLogs.userId, filters.userId)) as any;
+    }
+    if (filters?.action) {
+      query = query.where(eq(auditLogs.action, filters.action)) as any;
+    }
+    if (filters?.entityType) {
+      query = query.where(eq(auditLogs.entityType, filters.entityType)) as any;
+    }
+    if (filters?.dateFrom) {
+      query = query.where(gte(auditLogs.createdAt, filters.dateFrom)) as any;
+    }
+    if (filters?.dateTo) {
+      query = query.where(lte(auditLogs.createdAt, filters.dateTo)) as any;
+    }
+
+    const logs = await query.orderBy(desc(auditLogs.createdAt)).limit(limit).offset(offset);
+
+    const countResult = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(auditLogs)
+      .where(query);
+    
+    const total = Number(countResult[0]?.count || 0);
+
+    return { logs, total };
   }
   
   // ========== Budget Operations ==========

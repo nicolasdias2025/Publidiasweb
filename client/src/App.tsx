@@ -23,6 +23,7 @@ import NotasFiscais from "@/pages/notas-fiscais";
 import GestaoAdministrativa from "@/pages/gestao-administrativa";
 import Marketing from "@/pages/marketing";
 import AdminUsuarios from "@/pages/admin-usuarios";
+import AdminAuditoria from "@/pages/admin-auditoria";
 import Landing from "@/pages/landing";
 import LoginPage from "@/pages/login";
 import ChangePasswordPage from "@/pages/change-password";
@@ -71,7 +72,10 @@ function Router() {
       <Route path="/gestao-administrativa/:rest*" component={GestaoAdministrativa} />
       <Route path="/marketing" component={Marketing} />
       {user?.role === "admin" && (
-        <Route path="/admin/usuarios" component={AdminUsuarios} />
+        <>
+          <Route path="/admin/usuarios" component={AdminUsuarios} />
+          <Route path="/admin/auditoria" component={AdminAuditoria} />
+        </>
       )}
       <Route component={NotFound} />
     </Switch>

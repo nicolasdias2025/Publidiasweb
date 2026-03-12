@@ -185,6 +185,19 @@ export function AppSidebar() {
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => setLocation("/admin/auditoria")}
+                    isActive={location === "/admin/auditoria"}
+                    data-testid="link-painel-auditoria"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Painel de Auditoria</span>
+                    {location === "/admin/auditoria" && (
+                      <ChevronRight className="ml-auto h-4 w-4" />
+                    )}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
