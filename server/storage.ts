@@ -194,6 +194,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(id: string): Promise<void> {
+    // Deletar métricas de marketing criadas por este usuário
+    await db.delete(marketingMetrics).where(eq(marketingMetrics.createdBy, id));
+    // Deletar atividades de marketing criadas por este usuário
+    await db.delete(marketingActivities).where(eq(marketingActivities.createdBy, id));
+    // Deletar conteúdo de marketing criado por este usuário
+    await db.delete(marketingContent).where(eq(marketingContent.createdBy, id));
+    // Finalmente, deletar o usuário
     await db.delete(users).where(eq(users.id, id));
   }
   
