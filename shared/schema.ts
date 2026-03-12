@@ -851,3 +851,30 @@ export const insertMarketingMetricSchema = createInsertSchema(marketingMetrics).
 
 export type InsertMarketingMetric = z.infer<typeof insertMarketingMetricSchema>;
 export type MarketingMetric = typeof marketingMetrics.$inferSelect;
+
+// =============================================================================
+// TABELA DE AUDITORIA (Audit Logs)
+// =============================================================================
+
+export const auditLogs = pgTable(
+  "audit_logs",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    userId: varchar("user_id"),
+    action: varchar("action", { length: 50 }).notNull(),
+    entityType: varchar("entity_type", { length: 50 }).notNull(),
+    entityId: varchar("entity_id"),
+    description: text("description"),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [index("IDX_audit_created_at").on(table.createdAt)]
+);
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
+  id: true,
+  createdAt: true,
+});
