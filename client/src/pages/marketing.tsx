@@ -95,19 +95,10 @@ export default function Marketing() {
           <FileText className="h-4 w-4 mr-2" />
           Central de Conteúdo
         </Button>
-        <Button
-          variant={activeTab === "dados" ? "default" : "outline"}
-          onClick={() => setActiveTab("dados")}
-          data-testid="tab-dados"
-        >
-          <BarChart3 className="h-4 w-4 mr-2" />
-          Central de Dados
-        </Button>
       </div>
 
       {activeTab === "calendario" && <CalendarTab />}
       {activeTab === "conteudo" && <ContentTab />}
-      {activeTab === "dados" && <DataTab />}
     </div>
   );
 }
@@ -200,7 +191,7 @@ function CalendarTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold" data-testid="text-calendar-title">
-          {format(currentDate, "MMMM yyyy", { locale: ptBR })}
+          {format(currentDate, "MMMM yyyy", { locale: ptBR }).replace(/^\w/, c => c.toUpperCase())}
         </h2>
         <div className="flex items-center gap-2">
           <Button
