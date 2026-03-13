@@ -272,7 +272,7 @@ function GestaoPublicacoes() {
     <div className="space-y-6" data-testid="page-gestao-publicacoes">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold" data-testid="text-page-title">Publicações</h1>
+          <h1 className="text-3xl font-bold" data-testid="text-page-title">Publicações - Relatórios</h1>
           <p className="text-muted-foreground">Relatórios de publicações realizadas (somente leitura)</p>
         </div>
         <Button onClick={exportCSV} variant="outline" className="gap-2" data-testid="button-export-csv">
