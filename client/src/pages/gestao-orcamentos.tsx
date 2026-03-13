@@ -393,7 +393,7 @@ export default function GestaoOrcamentos() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">
+          <h1 className="text-3xl font-bold" data-testid="text-page-title">
             Orçamentos - Relatórios
           </h1>
           <p className="text-muted-foreground text-sm">

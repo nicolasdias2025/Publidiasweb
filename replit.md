@@ -10,6 +10,28 @@ The application handles specialized budget creation for official newspaper publi
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Updates (Session: NOTAS FISCAIS + UI Polish)
+
+### Dashboard - Notas Fiscais Panel ✅
+- Panel now correctly fetches budgets with `jornalConfirmed = true`
+- Supports NF number input + Jornal/Cliente confirmation buttons
+- PATCH operations for `/api/budgets/{id}` with nfNumber, nfJornalSent, nfClienteSent
+- Filters out completed entries (all 3 flags set)
+- Email copy-to-clipboard for client contact
+
+### UI Standardization & Polish ✅
+- **Gestão Administrativa - Publicações**: Title updated to "Publicações - Relatórios" (text-3xl)
+- **Gestão de Orçamentos - Reports**: Title "Orçamentos - Relatórios" upgraded to text-3xl
+- **Gestão Administrativa - Faturamento**: Title updated to "Faturamento - Relatórios" (text-3xl)
+- **Marketing Module**: Removed "Central de Dados" tab, capitalized month names in calendar (Janeiro, Fevereiro, etc.)
+- **Notas Fiscais Panel**: Layout standardized to full-width (removed container mx-auto)
+
+### Database Schema (budgets table) ✅
+- `nfNumber` (text): Number of the fiscal note entered by user
+- `nfJornalSent` (boolean): Journal/Newspaper notification sent flag
+- `nfClienteSent` (boolean): Client/Customer notification sent flag
+- Fields default to false, allowing partial completion tracking
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -92,7 +114,7 @@ Preferred communication style: Simple, everyday language.
 **Core Tables:**
 - `sessions` - Session storage for authentication
 - `users` - User accounts with username, passwordHash, profile info (no email — login exclusivamente por username)
-- `budgets` - Budget quotes for newspaper publications with line items
+- `budgets` - Budget quotes for newspaper publications with line items + NF tracking fields
 - `approvals` - Approval workflows with type, requester, status
 - `invoices` - Invoice records with client, amounts, tax details
 - `documents` - Administrative document management
@@ -124,6 +146,7 @@ The application is organized into six main functional modules:
    - Automatic total calculation: format × value_cm_col + diagramação
    - Client email management
    - Status tracking (draft, pending, approved)
+   - Jornal Confirmation workflow → Notas Fiscais tracking
 
 2. **Autorizações (Approvals)** - Workflow management with Google Sheets integration
    - Two-part form: Client data + Publication data
@@ -134,19 +157,24 @@ The application is organized into six main functional modules:
    - Request type categorization and status tracking
    - Department tracking and approval workflow
 
-3. **Notas Fiscais (Invoices)** - Invoice management
-   - Client invoicing with tax calculations
-   - Issue date tracking
-   - Status management (issued, cancelled)
-   - PDF generation capability
+3. **Notas Fiscais (Invoices Management)** - Invoice management integrated with Budgets
+   - Budgets with `jornalConfirmed = true` appear in Notas Fiscais panel
+   - NF number input + Jornal/Cliente confirmation buttons
+   - Tracks: nfNumber, nfJornalSent, nfClienteSent
+   - Automatic filtering of completed entries
+   - Email copy-to-clipboard for client communication
 
 4. **Gestão Administrativa** - Administrative management
+   - **Publicações - Relatórios**: Publication tracking and reporting
+   - **Faturamento - Relatórios**: Invoice management and financial reporting
    - Document repository with categories
    - Internal process tracking
    - Deadline management
    - Status workflows
 
 5. **Marketing** - Campaign and lead management
+   - **Calendário**: Activity calendar with monthly view
+   - **Central de Conteúdo**: Content library and management
    - Multi-channel campaign tracking
    - Lead scoring and status
    - Conversion metrics
@@ -154,8 +182,19 @@ The application is organized into six main functional modules:
 
 6. **Dashboard** - Overview and metrics
    - Statistical cards with trends
-   - Recent activity feeds
+   - Recent activity feeds (Orçamentos, Autorizações, Notas Fiscais, Marketing)
    - Quick access to pending items
+   - Panel-based layout for focused visibility
+
+### Audit System ✅
+
+**Audit Panel** - Admin-only audit trail (`/admin/auditoria`)
+- **Features**: Action logging, module filtering, user filtering, pagination
+- **Logged Actions**: Create, Update, Delete, Login, Logout
+- **Modules**: Orçamentos, Notas Fiscais, Cadastro de Clientes, Autorizações, Marketing
+- **API**: `GET /api/audit-logs` (admin-only, supports filters & pagination)
+- **Storage**: `auditLogs` table with JOINs to users for username resolution
+- **Frontend**: `admin-auditoria.tsx` with Select filters and table pagination
 
 ### Build and Deployment
 
