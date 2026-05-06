@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import type { Authorization } from '@shared/schema';
-import logoPublidias from '/assets/logo-publidias.png';
+const logoPublidias = '/assets/logo-publidias.png'
 
 const PUBLIDIAS_DATA = {
   razaoSocial: 'PUBLIDIAS SERVIÇOS DE PUBLICIDADE LTDA.',
