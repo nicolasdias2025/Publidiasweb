@@ -451,6 +451,7 @@ function ContentTab() {
   const [editingContent, setEditingContent] = useState<MarketingContent | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: contents = [], isLoading } = useQuery<MarketingContent[]>({
     queryKey: ["/api/marketing/content"],
@@ -597,7 +598,7 @@ function ContentTab() {
                     <TableCell className="font-medium">{content.title}</TableCell>
                     <TableCell>{content.contentType}</TableCell>
                     <TableCell>{content.clientType || "-"}</TableCell>
-                    <TableCell>{content.createdBy}</TableCell>
+                    <TableCell>{user?.name || user?.username || "Admin"}</TableCell>
                     <TableCell>{content.createdAt ? format(new Date(content.createdAt), "dd/MM/yyyy") : "-"}</TableCell>
                     <TableCell>{content.currentVersion}</TableCell>
                   </TableRow>
@@ -661,6 +662,22 @@ function ContentDialog({
   const [contentData, setContentData] = useState(content?.contentData || "");
   const [tags, setTags] = useState("");
 
+useEffect(() => {
+    if (content) {
+      setTitle(content.title || "");
+      setContentType(content.contentType || "Texto");
+      setClientType(content.clientType || "");
+      setContentData(content.contentData || "");
+      setTags("");
+    } else {
+      setTitle("");
+      setContentType("Texto");
+      setClientType("");
+      setContentData("");
+      setTags("");
+    }
+  }, [content, isOpen]);
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({
