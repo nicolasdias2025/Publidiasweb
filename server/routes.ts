@@ -101,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const nameQuery = String(req.query.name || "").trim().toLowerCase();
       if (!nameQuery) {
-        return res.json([]);
+        return res.json({ success: true, data: [] });
       }
       const allClients = await storage.getClients();
       const matches = allClients.filter((c: any) =>
@@ -109,7 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (c.razaoSocial && c.razaoSocial.toLowerCase().includes(nameQuery)) ||
         (c.cnpj && c.cnpj.includes(nameQuery))
       );
-      res.json(matches);
+      res.json({ success: true, data: matches });
     } catch (error: any) {
       res.status(500).json({ message: error.message || "Failed to search clients" });
     }
