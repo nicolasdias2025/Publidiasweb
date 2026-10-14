@@ -97,6 +97,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/clients/search-by-name", isAuthenticated, async (req: any, res) => {
+    try {
+      const nameQuery = String(req.query.name || "").trim().toLowerCase();
+      if (!nameQuery) {
+        return res.json([]);
+      }
+      const allClients = await storage.getClients();
+      const matches = allClients.filter((c: any) =>
+        (c.name && c.name.toLowerCase().includes(nameQuery)) ||
+        (c.razaoSocial && c.razaoSocial.toLowerCase().includes(nameQuery)) ||
+        (c.cnpj && c.cnpj.includes(nameQuery))
+      );
+      res.json(matches);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message || "Failed to search clients" });
+    }
+  });
 
   app.post("/api/clients", isAuthenticated, async (req: any, res) => {
   try {
