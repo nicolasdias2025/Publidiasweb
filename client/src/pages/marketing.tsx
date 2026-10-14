@@ -453,7 +453,7 @@ function ContentTab() {
   const { toast } = useToast();
 
   const { data: contents = [], isLoading } = useQuery<MarketingContent[]>({
-    queryKey: ["/api/marketing/content", { clientTypeFilter, contentTypeFilter, searchTerm }],
+    queryKey: ["/api/marketing/content"],
   });
 
   const createMutation = useMutation({
