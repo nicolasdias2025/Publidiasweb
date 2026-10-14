@@ -13,9 +13,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./localAuth";
-import { 
+import {
   insertBudgetSchema,
   insertClientSchema,
+  insertAuthorizationSchema,
   insertInvoiceSchema,
   updateInvoiceSchema,
   insertDocumentSchema,
@@ -370,10 +371,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
   app.post("/api/authorizations", isAuthenticated, async (req: any, res) => {
     try {
-      const validation = insertCampaignSchema.safeParse(req.body);
+      const authData = {
+        ...req.body,
+        createdBy: req.user?.id || "9ee4ebed-a072-4788-bd7c-5f829f032aa2",
+        observacoes: req.body.observacoes || null,
+        valorUnitario: req.body.valorUnitario || "0",
+      };
+      const validation = insertAuthorizationSchema.safeParse(authData);
       if (!validation.success) {
         return res.status(400).json({ errors: validation.error.errors });
       }
@@ -386,7 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/authorizations/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const validation = insertCampaignSchema.partial().safeParse(req.body);
+      const validation = insertAuthorizationSchema.partial().safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({ errors: validation.error.errors });
       }
