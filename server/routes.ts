@@ -433,14 +433,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/marketing/activities", isAuthenticated, async (req: any, res) => {
     try {
-      const validation = insertMarketingActivitySchema.safeParse(req.body);
+      const activityData = {
+        ...req.body,
+        createdBy: req.user?.id || "9ee4ebed-a072-4788-bd7c-5f829f032aa2",
+        date: req.body.date ? new Date(req.body.date) : new Date(),
+      };
+      const validation = insertMarketingActivitySchema.safeParse(activityData);
       if (!validation.success) {
         return res.status(400).json({ errors: validation.error.errors });
       }
-      const activity = await storage.createMarketingActivity({
-        ...validation.data,
-        createdBy: req.user.id,
-      });
+      const activity = await storage.createMarketingActivity(validation.data as any);
       res.status(201).json(activity);
     } catch (error: any) {
       res.status(400).json({ message: error.message || "Failed to create activity" });
@@ -449,11 +451,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/marketing/activities/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const validation = insertMarketingActivitySchema.partial().safeParse(req.body);
+      const updateData = {
+        ...req.body,
+        ...(req.body.date ? { date: new Date(req.body.date) } : {}),
+      };
+      const validation = insertMarketingActivitySchema.partial().safeParse(updateData);
       if (!validation.success) {
         return res.status(400).json({ errors: validation.error.errors });
       }
-      const activity = await storage.updateMarketingActivity(req.params.id, validation.data);
+      const activity = await storage.updateMarketingActivity(req.params.id, validation.data as any);
       res.json(activity);
     } catch (error: any) {
       res.status(400).json({ message: error.message || "Failed to update activity" });
