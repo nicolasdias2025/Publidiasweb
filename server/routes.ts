@@ -99,17 +99,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   app.post("/api/clients", isAuthenticated, async (req: any, res) => {
-    try {
-      const validation = insertClientSchema.safeParse(req.body);
-      if (!validation.success) {
-        return res.status(400).json({ errors: validation.error.errors });
-      }
-      const client = await storage.createClient(validation.data);
-      res.status(201).json(client);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message || "Failed to create client" });
+  try {
+    const clientData = {
+      ...req.body,
+      createdBy: req.user?.id || "9ee4ebed-a072-4788-bd7c-5f829f032aa2",
+      telefone2: req.body.telefone2 || null,
+      celular2: req.body.celular2 || null,
+      email2: req.body.email2 || null,
+      email3: req.body.email3 || null,
+      contatoTelefone: req.body.contatoTelefone || null,
+      contatoTelefone2: req.body.contatoTelefone2 || null,
+      contatoCelular: req.body.contatoCelular || null,
+      contatoCelular2: req.body.contatoCelular2 || null,
+    };
+    const validation = insertClientSchema.safeParse(clientData);
+    if (!validation.success) {
+      return res.status(400).json({ errors: validation.error.errors });
     }
-  });
+    const client = await storage.createClient(validation.data);
+    res.status(201).json(client);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message || "Failed to create client" });
+  }
+});
 
   app.patch("/api/clients/:id", isAuthenticated, async (req: any, res) => {
     try {
