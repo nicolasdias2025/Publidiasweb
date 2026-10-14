@@ -479,7 +479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/marketing/content", isAuthenticated, async (req, res) => {
     try {
-      const content = await storage.getMarketingContent();
+      const content = await storage.getMarketingContents();
       res.json(content);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch content" });
