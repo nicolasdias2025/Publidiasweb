@@ -500,16 +500,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/marketing/content", isAuthenticated, async (req: any, res) => {
     try {
-      const validation = insertMarketingContentSchema.safeParse(req.body);
+      const contentPayload = {
+        ...req.body,
+        createdBy: req.user?.id || "9ee4ebed-a072-4788-bd7c-5f829f032aa2",
+      };
+      const validation = insertMarketingContentSchema.safeParse(contentPayload);
       if (!validation.success) {
         return res.status(400).json({ errors: validation.error.errors });
       }
 
       const { tags, ...data } = validation.data;
-      const content = await storage.createMarketingContent({
-        ...data,
-        createdBy: req.user.id,
-      });
+      const content = await storage.createMarketingContent(data as any);
 
       if (tags && tags.length > 0) {
         await storage.setContentTags(content.id, tags);
