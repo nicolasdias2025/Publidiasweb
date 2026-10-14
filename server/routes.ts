@@ -45,18 +45,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
   // Cria novo orçamento
   app.post("/api/budgets", isAuthenticated, async (req: any, res) => {
     try {
-      const validation = insertBudgetSchema.safeParse(req.body);
+      const budgetData = {
+        ...req.body,
+        createdBy: req.user?.id || "9ee4ebed-a072-4788-bd7c-5f829f032aa2",
+        date: req.body.date ? new Date(req.body.date) : new Date(),
+      };
+      const validation = insertBudgetSchema.safeParse(budgetData);
       if (!validation.success) {
         return res.status(400).json({ errors: validation.error.errors });
       }
-      const budget = await storage.createBudget({
-        ...validation.data,
-        createdBy: req.user.id,
-      });
+      const budget = await storage.createBudget(validation.data as any);
       res.status(201).json(budget);
     } catch (error: any) {
       res.status(400).json({ message: error.message || "Failed to create budget" });
@@ -66,11 +67,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Atualiza orçamento
   app.patch("/api/budgets/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const validation = insertBudgetSchema.partial().safeParse(req.body);
+      const updateData = {
+        ...req.body,
+        ...(req.body.date ? { date: new Date(req.body.date) } : {}),
+      };
+      const validation = insertBudgetSchema.partial().safeParse(updateData);
       if (!validation.success) {
         return res.status(400).json({ errors: validation.error.errors });
       }
-      const budget = await storage.updateBudget(req.params.id, validation.data);
+      const budget = await storage.updateBudget(req.params.id, validation.data as any);
       res.json(budget);
     } catch (error: any) {
       res.status(400).json({ message: error.message || "Failed to update budget" });
