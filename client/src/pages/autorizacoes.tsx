@@ -421,7 +421,7 @@ export default function Autorizacoes() {
                       <TableCell className="max-w-[150px] truncate">{auth.jornal}</TableCell>
                       <TableCell>{auth.mes}/{auth.ano}</TableCell>
                       <TableCell>{auth.formato || `${auth.colLinha} × ${auth.cm}`}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(auth.valorBruto)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(auth.valorTotal)}</TableCell>
                       <TableCell className="text-right">{formatCurrency(auth.valorLiquido)}</TableCell>
                       <TableCell className="text-right font-semibold">{formatCurrency(auth.aplicarValorLiquido ? auth.valorLiquido : auth.valorTotal)}</TableCell>
                       <TableCell>
