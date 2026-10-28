@@ -231,18 +231,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   app.post("/api/invoices", isAuthenticated, async (req: any, res) => {
+  try {
+    // Obtém a identificação do utilizador autenticado
+    const userId = req.user?.username || req.user?.id?.toString() || "sistema";
+
+    // Injeta o createdBy antes de validar pelo schema
+    const dataToValidate = {
+      ...req.body,
+      createdBy: req.body.createdBy || userId,
+    };
+
+    const validation = insertInvoiceSchema.safeParse(dataToValidate);
+    if (!validation.success) {
+      return res.status(400).json({ errors: validation.error.errors });
+    }
+
+    const invoice = await storage.createInvoice(validation.data);
+    res.status(201).json(invoice);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message || "Failed to create invoice" });
+  }
+});
+// Rota para pesquisar cliente por CNPJ na emissão de nota fiscal
+  app.get(["/api/clients/lookup-by-cnpj", "/lookup-by-cnpj", "/api/lookup-by-cnpj"], isAuthenticated, async (req: any, res) => {
     try {
-      const validation = insertInvoiceSchema.safeParse(req.body);
-      if (!validation.success) {
-        return res.status(400).json({ errors: validation.error.errors });
+      const cnpj = req.query.cnpj as string;
+      if (!cnpj) {
+        return res.status(400).json({ message: "CNPJ não informado" });
       }
-      const invoice = await storage.createInvoice(validation.data);
-      res.status(201).json(invoice);
+
+      const client = await storage.getClientByCNPJ(cnpj);
+      if (!client) {
+        return res.status(404).json({ message: "Cliente não encontrado" });
+      }
+
+      res.json(client);
     } catch (error: any) {
-      res.status(400).json({ message: error.message || "Failed to create invoice" });
+      console.error("Erro ao procurar cliente por CNPJ:", error);
+      res.status(500).json({ message: "Erro interno ao procurar cliente" });
     }
   });
-
   app.patch("/api/invoices/:id", isAuthenticated, async (req: any, res) => {
     try {
       const validation = updateInvoiceSchema.safeParse(req.body);
