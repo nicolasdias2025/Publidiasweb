@@ -196,20 +196,23 @@ export default function NotasFiscais() {
   const watchedServiceType = form.watch("serviceType");
   const lookupQuery: any = useClientLookup(watchedCnpj);
   const loadingLookup = lookupQuery?.isLoading || false;
-  const clientData = lookupQuery?.data || lookupQuery?.clientData;
+  const clientData = lookupQuery?.data;
 
   // Autopreencher cliente e e-mails quando CNPJ é encontrado
   useEffect(() => {
-    if (clientData && (clientData.name || clientData.razaoSocial)) {
-      const name = clientData.name || clientData.razaoSocial || "";
+    if (!clientData) return;
+
+    const name = clientData.name || clientData.razaoSocial;
+    if (name) {
+      form.setValue("clientName", name, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+      
       const email1 = clientData.email || clientData.clientEmail || "";
       const email2 = clientData.email2 || clientData.clientEmail2 || "";
       const email3 = clientData.email3 || clientData.clientEmail3 || "";
 
-      form.setValue("clientName", name, { shouldValidate: true, shouldDirty: true });
-      form.setValue("clientEmail", email1, { shouldValidate: true, shouldDirty: true });
-      form.setValue("clientEmail2", email2, { shouldValidate: true, shouldDirty: true });
-      form.setValue("clientEmail3", email3, { shouldValidate: true, shouldDirty: true });
+      form.setValue("clientEmail", email1, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+      form.setValue("clientEmail2", email2, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+      form.setValue("clientEmail3", email3, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
 
       if (clientData.id) {
         form.setValue("clientId" as any, clientData.id);
@@ -220,7 +223,7 @@ export default function NotasFiscais() {
         description: `Dados de ${name} preenchidos automaticamente.`,
       });
     }
-  }, [clientData?.name, clientData?.id]);
+  }, [clientData, form, toast]);
  
   // Limpar data de pagamento quando status não é 'paid'
   useEffect(() => {
