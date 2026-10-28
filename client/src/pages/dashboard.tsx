@@ -662,7 +662,7 @@ function MarketingPanel() {
                   <tr key={c.id} className="border-b hover:bg-muted/40" data-testid={`row-campaign-${c.id}`}>
                     <td className="p-3 text-sm font-medium">{c.name}</td>
                     <td className="p-3 text-sm text-muted-foreground">{c.channel}</td>
-                    <td className="p-3 text-sm text-muted-foreground">{c.collaborator || "-"}</td>
+                    <td className="p-3 text-sm text-muted-foreground">{(c as any).collaborator || "-"}</td>
                     <td className="p-3">
                       <Badge variant={c.status === "active" ? "default" : "secondary"}>
                         {c.status === "active" ? "Ativa" : c.status}
