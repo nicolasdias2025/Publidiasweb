@@ -648,29 +648,30 @@ function MarketingPanel() {
               <tr className="border-b bg-muted/30">
                 <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Campanha</th>
                 <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Canal</th>
-                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Leads</th>
-                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Conversões</th>
+                <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Colaborador</th>
                 <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <EmptyRow cols={5} message="Carregando..." />
+                <EmptyRow cols={4} message="Carregando..." />
               ) : campaigns.length === 0 ? (
-                <EmptyRow cols={5} message="Nenhuma campanha cadastrada" />
+                <EmptyRow cols={4} message="Nenhuma campanha cadastrada" />
               ) : (
                 campaigns.map((c) => (
                   <tr key={c.id} className="border-b hover:bg-muted/40" data-testid={`row-campaign-${c.id}`}>
                     <td className="p-3 text-sm font-medium">{c.name}</td>
                     <td className="p-3 text-sm text-muted-foreground">{c.channel}</td>
-                    <td className="p-3 text-sm text-center">{c.leads}</td>
-                    <td className="p-3 text-sm text-center">{c.conversions}</td>
+                    <td className="p-3 text-sm text-muted-foreground">{c.collaborator || "-"}</td>
                     <td className="p-3">
                       <Badge variant={c.status === "active" ? "default" : "secondary"}>
                         {c.status === "active" ? "Ativa" : c.status}
                       </Badge>
                     </td>
                   </tr>
+                ))
+              )}
+            </tbody>
                 ))
               )}
             </tbody>
