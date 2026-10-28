@@ -672,9 +672,6 @@ function MarketingPanel() {
                 ))
               )}
             </tbody>
-                ))
-              )}
-            </tbody>
           </table>
         </div>
       </CardContent>
