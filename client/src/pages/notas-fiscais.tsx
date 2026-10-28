@@ -194,8 +194,9 @@ export default function NotasFiscais() {
   const watchedCnpj = form.watch("cnpj") || "";
   const watchedStatus = form.watch("status");
   const watchedServiceType = form.watch("serviceType");
-  const lookupQuery = useClientLookup(watchedCnpj);
-  const clientData = lookupQuery?.data || (lookupQuery as any)?.clientData;
+  const lookupQuery: any = useClientLookup(watchedCnpj);
+  const loadingLookup = lookupQuery?.isLoading || false;
+  const clientData = lookupQuery?.data || lookupQuery?.clientData;
 
   // Autopreencher cliente e e-mails quando CNPJ é encontrado
   useEffect(() => {
