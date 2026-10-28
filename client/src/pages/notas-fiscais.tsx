@@ -194,21 +194,21 @@ export default function NotasFiscais() {
   const watchedCnpj = form.watch("cnpj") || "";
   const watchedStatus = form.watch("status");
   const watchedServiceType = form.watch("serviceType");
-  const lookupResult: any = useClientLookup(watchedCnpj);
-  const clientData = lookupResult?.data || lookupResult?.clientData || lookupResult;
+  const lookupQuery = useClientLookup(watchedCnpj);
+  const clientData = lookupQuery?.data || (lookupQuery as any)?.clientData;
 
   // Autopreencher cliente e e-mails quando CNPJ é encontrado
   useEffect(() => {
-    if (clientData) {
+    if (clientData && (clientData.name || clientData.razaoSocial)) {
       const name = clientData.name || clientData.razaoSocial || "";
       const email1 = clientData.email || clientData.clientEmail || "";
       const email2 = clientData.email2 || clientData.clientEmail2 || "";
       const email3 = clientData.email3 || clientData.clientEmail3 || "";
 
-      form.setValue("clientName", name, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-      form.setValue("clientEmail", email1, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-      form.setValue("clientEmail2", email2, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-      form.setValue("clientEmail3", email3, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+      form.setValue("clientName", name, { shouldValidate: true, shouldDirty: true });
+      form.setValue("clientEmail", email1, { shouldValidate: true, shouldDirty: true });
+      form.setValue("clientEmail2", email2, { shouldValidate: true, shouldDirty: true });
+      form.setValue("clientEmail3", email3, { shouldValidate: true, shouldDirty: true });
 
       if (clientData.id) {
         form.setValue("clientId" as any, clientData.id);
@@ -219,8 +219,8 @@ export default function NotasFiscais() {
         description: `Dados de ${name} preenchidos automaticamente.`,
       });
     }
-  }, [clientData, form, toast]);
-  
+  }, [clientData?.name, clientData?.id]);
+ 
   // Limpar data de pagamento quando status não é 'paid'
   useEffect(() => {
     if (watchedStatus !== "paid") {
