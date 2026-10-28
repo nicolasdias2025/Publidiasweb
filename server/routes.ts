@@ -323,16 +323,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
 
-    // 1. Procura as atividades do mês corrente
+    // 1. Busca as atividades do mês corrente
     let activities = await storage.getMarketingActivities(currentYear, currentMonth);
 
-    // 2. Se por acaso estiver vazio (ex: transição de mês ou timezone), procura o mês 10 diretamente
+    // 2. Fallback caso necessário
     if (!activities || activities.length === 0) {
       activities = await storage.getMarketingActivities(2026, 10);
     }
 
-    // 3. Mapeia para os campos esperados pela tabela do Dashboard
-    const campaigns = (activities || []).map((act: any) => ({
+    // 3. Filtra para remover qualquer campanha 'Concluída' (mantém apenas Pendente e Execução)
+    const activeActivities = (activities || []).filter((act: any) => {
+      const statusLower = (act.status || "").toLowerCase().trim();
+      return statusLower !== "concluída" && statusLower !== "concluida";
+    });
+
+    // 4. Mapeia para a exibição no Dashboard
+    const campaigns = activeActivities.map((act: any) => ({
       id: act.id,
       name: act.title,
       campanha: act.title,
