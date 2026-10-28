@@ -8,13 +8,16 @@ import { useQuery } from '@tanstack/react-query';
 import { getAuthToken } from '@/lib/queryClient';
 
 interface ClientData {
+  id?: string;
   cnpj: string;
   name: string;
-  address: string;
-  city: string;
-  zip: string;
-  state: string;
-  email: string;
+  address?: string;
+  city?: string;
+  zip?: string;
+  state?: string;
+  email?: string;
+  email2?: string | null;
+  email3?: string | null;
 }
 
 interface LookupResponse {
@@ -70,11 +73,14 @@ export function useClientLookup(cnpj: string) {
     staleTime: 60000,
   });
 
-  return {
-    clientData: data?.data || null,
-    isLoading,
-    isError,
-    error,
-    isNotFound: data?.success && !data?.data,
-  };
+ // Aceita tanto se o backend devolver { data: client } quanto se devolver o client direto na raiz
+const resolvedClient = (data as any)?.data || (data as any)?.name ? (data as any) : null;
+
+return {
+  clientData: (data as any)?.data || (data as any)?.name ? ((data as any)?.data || data) : null,
+  isLoading,
+  isError,
+  error,
+  isNotFound: !isLoading && !resolvedClient,
+};
 }
