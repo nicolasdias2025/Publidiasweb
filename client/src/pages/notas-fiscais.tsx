@@ -196,35 +196,30 @@ export default function NotasFiscais() {
   const watchedServiceType = form.watch("serviceType");
   const { clientData, isLoading: loadingLookup } = useClientLookup(watchedCnpj);
 
-    // Autopreencher cliente e e-mails quando CNPJ é encontrado
+  // Autopreencher cliente e e-mails quando CNPJ é encontrado
   useEffect(() => {
     if (clientData) {
-      // Preenche a Razão Social / Nome do Cliente
-      form.setValue("clientName", clientData.name || "", { shouldValidate: true, shouldDirty: true });
-      
-      // Vincula o ID do cliente se o schema tiver o campo clientId
-      if (clientData.id) {
-        form.setValue("clientId", clientData.id, { shouldValidate: true, shouldDirty: true });
-      }
+      const name = clientData.name || clientData.razaoSocial || "";
+      const email1 = clientData.email || clientData.clientEmail || "";
+      const email2 = clientData.email2 || clientData.clientEmail2 || "";
+      const email3 = clientData.email3 || clientData.clientEmail3 || "";
 
-      // Preenche os e-mails cadastrados no cliente
-      if (clientData.email) {
-        form.setValue("clientEmail", clientData.email, { shouldValidate: true, shouldDirty: true });
-        form.setValue("email1", clientData.email, { shouldValidate: true, shouldDirty: true });
-      }
-      if (clientData.email2) {
-        form.setValue("email2", clientData.email2, { shouldValidate: true, shouldDirty: true });
-      }
-      if (clientData.email3) {
-        form.setValue("email3", clientData.email3, { shouldValidate: true, shouldDirty: true });
+      form.setValue("clientName", name, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+      form.setValue("clientEmail", email1, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+      form.setValue("clientEmail2", email2, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+      form.setValue("clientEmail3", email3, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+
+      if (clientData.id) {
+        form.setValue("clientId" as any, clientData.id);
       }
 
       toast({
         title: "Cliente encontrado!",
-        description: `Dados de ${clientData.name} preenchidos automaticamente.`,
+        description: `Dados de ${name} preenchidos automaticamente.`,
       });
     }
   }, [clientData, form, toast]);
+  
   // Limpar data de pagamento quando status não é 'paid'
   useEffect(() => {
     if (watchedStatus !== "paid") {
