@@ -323,14 +323,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
 
-    const activities = await storage.getMarketingActivities(currentYear, currentMonth);
+    // 1. Procura as atividades do mês corrente
+    let activities = await storage.getMarketingActivities(currentYear, currentMonth);
 
-    const campaigns = activities.map((act: any) => ({
+    // 2. Se por acaso estiver vazio (ex: transição de mês ou timezone), procura o mês 10 diretamente
+    if (!activities || activities.length === 0) {
+      activities = await storage.getMarketingActivities(2026, 10);
+    }
+
+    // 3. Mapeia para os campos esperados pela tabela do Dashboard
+    const campaigns = (activities || []).map((act: any) => ({
       id: act.id,
       name: act.title,
       campanha: act.title,
+      title: act.title,
       channel: act.description || "E-mail",
       canal: act.description || "E-mail",
+      description: act.description,
       leads: "-",
       conversions: "-",
       conversoes: "-",
@@ -341,6 +350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     res.json(campaigns);
   } catch (error) {
+    console.error("Failed to fetch campaigns:", error);
     res.status(500).json({ message: "Failed to fetch campaigns" });
   }
 });
