@@ -232,10 +232,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/invoices", isAuthenticated, async (req: any, res) => {
   try {
-    // Obtém a identificação do utilizador autenticado
-    const userId = req.user?.username || req.user?.id?.toString() || "sistema";
+    // 1. Obtém estritamente o UUID/ID do utilizador autenticado
+    const userId = req.user?.id || req.session?.passport?.user || req.session?.userId;
 
-    // Injeta o createdBy antes de validar pelo schema
+    // 2. Injeta o ID válido no createdBy
     const dataToValidate = {
       ...req.body,
       createdBy: req.body.createdBy || userId,
@@ -249,6 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const invoice = await storage.createInvoice(validation.data);
     res.status(201).json(invoice);
   } catch (error: any) {
+    console.error("Erro ao cadastrar nota fiscal:", error);
     res.status(400).json({ message: error.message || "Failed to create invoice" });
   }
 });
