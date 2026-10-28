@@ -318,13 +318,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== Campaign Routes ==========
 
   app.get("/api/campaigns", isAuthenticated, async (req, res) => {
-    try {
-      const campaigns = await storage.getCampaigns();
-      res.json(campaigns);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch campaigns" });
-    }
-  });
+  try {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    const activities = await storage.getMarketingActivities(currentYear, currentMonth);
+
+    const campaigns = activities.map((act: any) => ({
+      id: act.id,
+      name: act.title,
+      campanha: act.title,
+      channel: act.description || "E-mail",
+      canal: act.description || "E-mail",
+      leads: "-",
+      conversions: "-",
+      conversoes: "-",
+      status: act.status || "Pendente",
+      collaborator: act.collaborator,
+      date: act.date
+    }));
+
+    res.json(campaigns);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch campaigns" });
+  }
+});
 
   app.post("/api/campaigns", isAuthenticated, async (req: any, res) => {
     try {
