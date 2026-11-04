@@ -100,9 +100,11 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b p-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <span className="text-sm font-bold">SC</span>
-          </div>
+          <img 
+  src="/logo.png" 
+  alt="Publidias" 
+  className="h-8 w-8 object-contain rounded-md" 
+/>
           <div>
             <h2 className="text-sm font-semibold">Sistema Corporativo</h2>
             <p className="text-xs text-muted-foreground">Gestão Integrada</p>
