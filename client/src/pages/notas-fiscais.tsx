@@ -59,6 +59,16 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useClientLookup } from "@/hooks/useClientLookup";
 import type { Invoice } from "@shared/schema";
 
+function formatDisplayDate(dateInput: string | Date | null | undefined): string {
+  if (!dateInput) return "-";
+  const str = typeof dateInput === "string" ? dateInput : dateInput.toISOString();
+  const datePart = str.split("T")[0]; // Obtém "YYYY-MM-DD"
+  const parts = datePart.split("-");
+  if (parts.length !== 3) return "-";
+  const [year, month, day] = parts;
+  return `${day}/${month}/${year}`;
+}
+
 // Paleta de cores para status
 const statusColors = {
   pending: { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-800 dark:text-amber-200", label: "Pendente Rec." },
@@ -333,9 +343,9 @@ export default function NotasFiscais() {
       serviceType: isPredefined ? invoice.serviceType : "Outro",
       serviceTypeCustom: isPredefined ? "" : invoice.serviceType,
       value: invoice.value,
-      emissionDate: new Date(invoice.emissionDate).toISOString().split('T')[0],
-      dueDate: new Date(invoice.dueDate).toISOString().split('T')[0],
-      paymentDate: invoice.paymentDate ? new Date(invoice.paymentDate).toISOString().split('T')[0] : "",
+      emissionDate: typeof invoice.emissionDate === "string" ? invoice.emissionDate.split("T")[0] : new Date(invoice.emissionDate).toISOString().split("T")[0],
+      dueDate: typeof invoice.dueDate === "string" ? invoice.dueDate.split("T")[0] : new Date(invoice.dueDate).toISOString().split("T")[0],
+      paymentDate: invoice.paymentDate ? (typeof invoice.paymentDate === "string" ? invoice.paymentDate.split("T")[0] : new Date(invoice.paymentDate).toISOString().split("T")[0]) : "",
       status: invoice.status as any,
       retencaoCsll: invoice.retencaoCsll ?? false,
       retencaoCofins: invoice.retencaoCofins ?? false,
@@ -639,7 +649,7 @@ export default function NotasFiscais() {
                           {formatCurrency(invoice.value)}
                         </td>
                         <td className="py-4" data-testid={`text-emission-date-${invoice.id}`}>
-                          {formatDate(invoice.emissionDate)}
+                          {formatDisplayDate(invoice.emissionDate)}
                         </td>
                         <td className="py-4">
                           <Badge className={`${statusConfig.bg} ${statusConfig.text}`} data-testid={`badge-status-${invoice.id}`}>
