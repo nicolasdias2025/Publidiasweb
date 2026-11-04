@@ -53,9 +53,11 @@ export default function Landing() {
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <span className="text-xl font-bold">SC</span>
-            </div>
+            <img 
+  src="/logo.png" 
+  alt="Publidias" 
+  className="h-16 w-auto object-contain" 
+/>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4" data-testid="text-landing-title">
             Sistema Corporativo Integrado
