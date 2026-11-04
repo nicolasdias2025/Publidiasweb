@@ -111,9 +111,8 @@ export default function Landing() {
 
         <div className="mt-16 text-center text-sm text-muted-foreground">
           <p>
-            Sistema desenvolvido para gestão corporativa completa • 
-            Autenticação segura • 
-            Compatível com UOL Host
+            Sistema desenvolvido para Gestão Corporativa Completa • 
+            Autenticação segura 
           </p>
         </div>
       </div>
