@@ -247,6 +247,7 @@ export const authorizations = pgTable("authorizations", {
   valorLiquido: decimal("valor_liquido", { precision: 12, scale: 2 }).notNull(), // Com desconto
   valorTotal: decimal("valor_total", { precision: 12, scale: 2 }).notNull(), // Total final
   diagramacao: decimal("diagramacao", { precision: 10, scale: 2 }).default("0"), // Serviço de design
+  custoPublicacao: decimal("custo_publicacao", { precision: 10, scale: 2 }).default("0"),
   
   // Observações
   observacoes: text("observacoes"),
