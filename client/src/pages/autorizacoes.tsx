@@ -187,7 +187,7 @@ export default function Autorizacoes() {
       desconto: auth.desconto || "0",
       aplicarValorLiquido: auth.aplicarValorLiquido || false,
       valorDiagramacao: auth.diagramacao || "0",
-      custoPublicacao: "0",
+      custoPublicacao: (auth as any).custoPublicacao || "0",
       observacoes: auth.observacoes || "",
     });
     setEditingId(auth.id);
@@ -319,6 +319,7 @@ export default function Autorizacoes() {
       valorLiquido: valorLiquido.toFixed(2),
       valorTotal: valorTotal.toFixed(2),
       diagramacao: data.valorDiagramacao || "0",
+      custoPublicacao: data.custoPublicacao || "0",
       observacoes: data.observacoes || null,
     };
 
